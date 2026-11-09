@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+
+    <persistence-unit name="skillSwapPU" transaction-type="RESOURCE_LOCAL">
+
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+        <class>com.skillswap.domain.Habilidad</class>
+        <class>com.skillswap.domain.Categoria</class>
+        <class>com.skillswap.domain.Organizacion</class>
+        <class>com.skillswap.domain.Publicacion</class>
+        <class>com.skillswap.domain.FranjaHoraria</class>
+        <class>com.skillswap.domain.Solicitud</class>
+        <class>com.skillswap.domain.Reserva</class>
+        <class>com.skillswap.domain.PropuestaReprogramacion</class>
+        <class>com.skillswap.domain.Billetera</class>
+        <class>com.skillswap.domain.Movimiento</class>
+        <class>com.skillswap.domain.Pago</class>
+        <class>com.skillswap.domain.Calificacion</class>
+        <class>com.skillswap.domain.Notificacion</class>
+        <class>com.skillswap.domain.Promocion</class>
+        <class>com.skillswap.domain.Perfil</class>
+        <class>com.skillswap.domain.Contratacion</class>
+        <class>com.skillswap.domain.RegistroEstadoPublicacion</class>
+        <class>com.skillswap.domain.RegistroEstadoContratacion</class>
+
+        <properties>
+            <property name="jakarta.persistence.jdbc.driver"
+                      value="com.mysql.cj.jdbc.Driver"/>
+
+            <!-- La base se crea sola si no existe. Ajustar usuario/clave a la MySQL local de cada integrante. -->
+            <property name="jakarta.persistence.jdbc.url"
+                      value="jdbc:mysql://localhost:3306/skillswap?createDatabaseIfNotExist=true&amp;serverTimezone=UTC"/>
+
+            <property name="jakarta.persistence.jdbc.user"
+                      value="root"/>
+
+            <property name="jakarta.persistence.jdbc.password"
+                      value="root"/>
+
+            <property name="hibernate.dialect"
+                      value="org.hibernate.dialect.MySQLDialect"/>
+
+            <property name="hibernate.hbm2ddl.auto"
+                      value="update"/>
+
+            <property name="hibernate.show_sql"
+                      value="true"/>
+
+            <property name="hibernate.format_sql"
+                      value="true"/>
+        </properties>
+
+    </persistence-unit>
+
+</persistence>

@@ -12,4 +12,63 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <dependencies>
+        <!-- Hibernate / JPA (incluye jakarta.persistence-api) -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>6.5.2.Final</version>
+        </dependency>
+
+        <!-- Driver MySQL -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>9.7.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.13</version>
+        </dependency>
+
+        <!-- Tests de persistencia: base H2 en memoria -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.2.224</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+                <configuration>
+                    <!-- bytebuddy experimental: permite correr Hibernate 6.5 en JDK nuevos -->
+                    <argLine>-Dnet.bytebuddy.experimental=true</argLine>
+                    <!-- Los tests usan H2 en vez de MySQL (JPAUtil toma estas propiedades como override) -->
+                    <systemPropertyVariables>
+                        <jakarta.persistence.jdbc.driver>org.h2.Driver</jakarta.persistence.jdbc.driver>
+                        <jakarta.persistence.jdbc.url>jdbc:h2:mem:skillswap_test;MODE=MySQL;DB_CLOSE_DELAY=-1</jakarta.persistence.jdbc.url>
+                        <jakarta.persistence.jdbc.user>sa</jakarta.persistence.jdbc.user>
+                        <jakarta.persistence.jdbc.password></jakarta.persistence.jdbc.password>
+                        <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
+                        <hibernate.hbm2ddl.auto>create-drop</hibernate.hbm2ddl.auto>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
