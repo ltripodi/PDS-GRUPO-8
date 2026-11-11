@@ -1,6 +1,11 @@
 package com.skillswap.domain;
 
+/*
+ * PENDIENTE: el cliente solicito y el proveedor todavia no respondio.
+ * Acciones validas (consigna 4.5): aceptar o rechazar.
+ */
 public class EstadoPendiente extends EstadoContratacionBase {
+
     @Override
     public String nombre() {
         return "PENDIENTE";
@@ -8,11 +13,11 @@ public class EstadoPendiente extends EstadoContratacionBase {
 
     @Override
     public void aceptar(Contratacion ctx) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        ctx.cambiarEstado(new EstadoAceptada());
     }
 
     @Override
     public void rechazar(Contratacion ctx) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        ctx.cambiarEstado(new EstadoRechazada());
     }
 }

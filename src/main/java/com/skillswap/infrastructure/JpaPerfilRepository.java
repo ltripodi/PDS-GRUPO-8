@@ -23,6 +23,11 @@ public class JpaPerfilRepository extends SimpleJpaRepository<Perfil, UUID> imple
     }
 
     @Override
+    public Optional<Perfil> buscarPorId(UUID id) {
+        return buscarEntidadPorId(id);
+    }
+
+    @Override
     public void guardar(Perfil perfil) {
         guardarEntidad(perfil);
     }

@@ -7,6 +7,13 @@ import jakarta.persistence.Table;
 
 import java.util.UUID;
 
+/*
+ * Propuesta de mover una reserva a otra franja (consigna 4.4):
+ * "una reserva puede reprogramarse antes de comenzar si ambas partes aceptan".
+ *
+ * Solo guarda el "doble consentimiento". No sabe quien es cliente o proveedor:
+ * eso lo resuelve la Contratacion (Information Expert) y llama al metodo que corresponde.
+ */
 @Entity
 @Table(name = "propuestas_reprogramacion")
 public class PropuestaReprogramacion {
@@ -29,9 +36,38 @@ public class PropuestaReprogramacion {
     }
 
     public PropuestaReprogramacion(UUID contratacionId, UUID nuevaFranjaId) {
+        if (contratacionId == null || nuevaFranjaId == null) {
+            throw new IllegalArgumentException("La contratacion y la nueva franja son obligatorias");
+        }
         this.id = UUID.randomUUID();
         this.contratacionId = contratacionId;
         this.nuevaFranjaId = nuevaFranjaId;
+    }
+
+    public void aceptarComoCliente() {
+        validarAbierta();
+        this.aceptacionCliente = true;
+    }
+
+    public void aceptarComoProveedor() {
+        validarAbierta();
+        this.aceptacionProveedor = true;
+    }
+
+    /*
+     * La reprogramacion solo se aplica cuando las dos partes estan de acuerdo.
+     */
+    public boolean aceptadaPorAmbos() {
+        return aceptacionCliente && aceptacionProveedor;
+    }
+
+    /*
+     * Una propuesta ya aceptada por ambos quedo resuelta: no se puede volver a tocar.
+     */
+    private void validarAbierta() {
+        if (aceptadaPorAmbos()) {
+            throw new IllegalStateException("La propuesta de reprogramacion ya fue aceptada por ambas partes");
+        }
     }
 
     public UUID getId() {
@@ -52,13 +88,5 @@ public class PropuestaReprogramacion {
 
     public boolean isAceptacionProveedor() {
         return aceptacionProveedor;
-    }
-
-    public void aceptar(String actorId) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
-    }
-
-    public boolean aceptadaPorAmbos() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
     }
 }

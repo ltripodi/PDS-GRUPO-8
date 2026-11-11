@@ -18,4 +18,6 @@ public interface EstadoContratacion {
     void proponerReprogramacion(Contratacion ctx);
 
     void aplicarReprogramacion(Contratacion ctx);
+
+    boolean permiteCalificar();
 }

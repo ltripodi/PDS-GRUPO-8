@@ -163,6 +163,11 @@ class IntegranteUnoTest {
         }
 
         @Override
+        public Optional<Perfil> buscarPorId(UUID id) {
+            return perfiles.values().stream().filter(perfil -> perfil.getId().equals(id)).findFirst();
+        }
+
+        @Override
         public void guardar(Perfil perfil) {
             perfiles.put(perfil.getUserId(), perfil);
         }

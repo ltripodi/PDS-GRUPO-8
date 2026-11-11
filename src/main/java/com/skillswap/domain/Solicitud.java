@@ -11,6 +11,13 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
+/*
+ * Pedido de un cliente sobre una publicacion (consigna 4.4):
+ * "un cliente solicita una publicacion indicando mensaje, franja elegida y objetivo".
+ *
+ * Las reglas de negocio para CREAR una solicitud nueva viven en el metodo de fabrica
+ * crear(...) (mismo estilo que Publicacion.crearOferta). El constructor solo arma el objeto.
+ */
 @Entity
 @Table(name = "solicitudes")
 public class Solicitud {
@@ -39,6 +46,9 @@ public class Solicitud {
     }
 
     public Solicitud(UUID clienteId, Publicacion publicacion, UUID franjaId, String mensaje, String objetivo) {
+        if (clienteId == null || publicacion == null) {
+            throw new IllegalArgumentException("El cliente y la publicacion son obligatorios");
+        }
         this.id = UUID.randomUUID();
         this.clienteId = clienteId;
         this.publicacion = publicacion;
@@ -46,6 +56,49 @@ public class Solicitud {
         this.mensaje = mensaje;
         this.objetivo = objetivo;
         this.fechaCreacion = Instant.now();
+    }
+
+    /*
+     * Factory Method con las reglas de negocio de la consigna (seccion 5):
+     *  - el perfil del cliente debe estar activo (baja logica);
+     *  - el autor no puede solicitar su propia publicacion;
+     *  - una publicacion no publicada no admite solicitudes;
+     *  - la franja elegida debe pertenecer a la publicacion y tener cupo;
+     *  - el objetivo es obligatorio.
+     */
+    public static Solicitud crear(Perfil cliente, Publicacion publicacion, UUID franjaId,
+                                  String mensaje, String objetivo) {
+        if (cliente == null || !cliente.isActivo()) {
+            throw new IllegalArgumentException("La solicitud requiere un perfil activo");
+        }
+        if (publicacion == null) {
+            throw new IllegalArgumentException("La publicacion es obligatoria");
+        }
+        if (cliente.getId().equals(publicacion.getAutorId())) {
+            throw new IllegalArgumentException("El autor no puede solicitar su propia publicacion");
+        }
+        if (!publicacion.admiteSolicitud()) {
+            throw new IllegalStateException("Una publicacion no publicada no admite solicitudes");
+        }
+        if (objetivo == null || objetivo.isBlank()) {
+            throw new IllegalArgumentException("La solicitud requiere un objetivo");
+        }
+
+        FranjaHoraria franja = publicacion.getFranjas().stream()
+                .filter(f -> f.getId().equals(franjaId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("La franja elegida no pertenece a la publicacion"));
+
+        /*
+         * Chequeo temprano para dar un error claro al cliente. El bloqueo real del cupo
+         * ocurre recien al aceptar (Reserva + optimistic locking), no aca.
+         */
+        if (!franja.hayCupo()) {
+            throw new IllegalStateException("La franja elegida no tiene cupo disponible");
+        }
+
+        String mensajeLimpio = mensaje == null ? "" : mensaje.trim();
+        return new Solicitud(cliente.getId(), publicacion, franjaId, mensajeLimpio, objetivo.trim());
     }
 
     public UUID getId() {

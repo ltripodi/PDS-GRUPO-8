@@ -1,6 +1,13 @@
 package com.skillswap.domain;
 
+/*
+ * CONFIRMADA: el cliente pago con SkillCoins.
+ * Acciones validas (consigna 4.5): iniciar, reprogramar o cancelar segun politica.
+ * El calculo del reintegro (100 / 50 / 0 %) lo resuelve la PoliticaCancelacion (Strategy),
+ * no el estado: el estado solo decide SI se puede cancelar.
+ */
 public class EstadoConfirmada extends EstadoContratacionBase {
+
     @Override
     public String nombre() {
         return "CONFIRMADA";
@@ -8,21 +15,21 @@ public class EstadoConfirmada extends EstadoContratacionBase {
 
     @Override
     public void iniciar(Contratacion ctx) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        ctx.cambiarEstado(new EstadoEnCurso());
     }
 
     @Override
     public void cancelar(Contratacion ctx) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
-    }
-
-    @Override
-    public void aplicarReprogramacion(Contratacion ctx) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        ctx.cambiarEstado(new EstadoCancelada());
     }
 
     @Override
     public void proponerReprogramacion(Contratacion ctx) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        // Permitido: la contratacion sigue CONFIRMADA.
+    }
+
+    @Override
+    public void aplicarReprogramacion(Contratacion ctx) {
+        // Permitido: la contratacion sigue CONFIRMADA, cambia la franja de la reserva.
     }
 }

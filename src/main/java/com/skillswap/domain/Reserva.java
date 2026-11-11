@@ -10,6 +10,15 @@ import jakarta.persistence.Table;
 
 import java.util.UUID;
 
+/*
+ * Reserva de cupo en una FranjaHoraria (consigna 4.4).
+ *
+ * Crear una reserva OCUPA el cupo; liberarla lo DEVUELVE. Asi el cupo de la franja
+ * y la reserva no pueden quedar desincronizados (nadie ocupa un cupo "a mano").
+ *
+ * La sobreventa concurrente (dos aceptaciones por el ultimo cupo) la frena el
+ * @Version de FranjaHoraria (optimistic locking) al hacer commit.
+ */
 @Entity
 @Table(name = "reservas")
 public class Reserva {
@@ -31,11 +40,71 @@ public class Reserva {
     }
 
     public Reserva(FranjaHoraria franja, int cantidad) {
+        if (franja == null) {
+            throw new IllegalArgumentException("La franja es obligatoria");
+        }
+        if (cantidad <= 0) {
+            throw new IllegalArgumentException("La cantidad reservada debe ser positiva");
+        }
+        if (franja.getOcupados() + cantidad > franja.getCupo()) {
+            throw new IllegalStateException("La franja no tiene cupo disponible");
+        }
+
+        for (int i = 0; i < cantidad; i++) {
+            franja.ocupar();
+        }
+
         this.id = UUID.randomUUID();
         this.franja = franja;
         this.franjaId = franja.getId();
         this.cantidad = cantidad;
         this.vigente = true;
+    }
+
+    /*
+     * Mueve la reserva a otra franja: primero ocupa la nueva (si no hay cupo, falla
+     * sin haber tocado nada) y despues libera la vieja.
+     */
+    public void reprogramar(FranjaHoraria nueva) {
+        validarVigente();
+        if (nueva == null) {
+            throw new IllegalArgumentException("La nueva franja es obligatoria");
+        }
+        if (nueva.getId().equals(franjaId)) {
+            throw new IllegalArgumentException("La nueva franja debe ser distinta a la actual");
+        }
+        if (nueva.getOcupados() + cantidad > nueva.getCupo()) {
+            throw new IllegalStateException("La nueva franja no tiene cupo disponible");
+        }
+
+        for (int i = 0; i < cantidad; i++) {
+            nueva.ocupar();
+        }
+        devolverCupo();
+
+        this.franja = nueva;
+        this.franjaId = nueva.getId();
+    }
+
+    /*
+     * Devuelve el cupo a la franja (por ejemplo, al cancelar). Solo una vez.
+     */
+    public void liberar() {
+        validarVigente();
+        devolverCupo();
+        this.vigente = false;
+    }
+
+    private void devolverCupo() {
+        for (int i = 0; i < cantidad; i++) {
+            franja.liberar();
+        }
+    }
+
+    private void validarVigente() {
+        if (!vigente) {
+            throw new IllegalStateException("La reserva ya fue liberada");
+        }
     }
 
     public UUID getId() {
@@ -56,13 +125,5 @@ public class Reserva {
 
     public FranjaHoraria getFranja() {
         return franja;
-    }
-
-    public void reprogramar(FranjaHoraria nueva) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
-    }
-
-    public void liberar() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
     }
 }
