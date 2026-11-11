@@ -29,6 +29,12 @@ public class FranjaHoraria {
     }
 
     public FranjaHoraria(Instant inicio, Instant fin, int cupo) {
+        if (inicio == null || fin == null || !inicio.isBefore(fin)) {
+            throw new IllegalArgumentException("La franja debe tener inicio anterior al fin");
+        }
+        if (cupo <= 0) {
+            throw new IllegalArgumentException("El cupo debe ser positivo");
+        }
         this.id = UUID.randomUUID();
         this.inicio = inicio;
         this.fin = fin;
@@ -61,14 +67,20 @@ public class FranjaHoraria {
     }
 
     public boolean hayCupo() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return ocupados < cupo;
     }
 
     public void ocupar() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (!hayCupo()) {
+            throw new IllegalStateException("La franja no tiene cupo disponible");
+        }
+        ocupados++;
     }
 
     public void liberar() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (ocupados == 0) {
+            throw new IllegalStateException("La franja no tiene cupos ocupados para liberar");
+        }
+        ocupados--;
     }
 }

@@ -16,6 +16,8 @@ public interface PublicacionRepository {
 
     List<Publicacion> buscarActivasPorAutor(String userId);
 
+    List<Publicacion> listarPropias(String userId);
+
     Pagina<Publicacion> buscar(FiltrosBusqueda filtros, int pagina, int tamanio);
 
     List<Categoria> listarCategorias();

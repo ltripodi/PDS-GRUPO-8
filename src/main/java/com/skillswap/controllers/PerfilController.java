@@ -1,27 +1,31 @@
 package com.skillswap.controllers;
 
 import com.skillswap.application.DatosPerfilDTO;
+import com.skillswap.application.PerfilPublicoDTO;
 import com.skillswap.application.PerfilService;
-import com.skillswap.domain.Perfil;
 
 import java.util.UUID;
 
 public class PerfilController {
-    private PerfilService perfilService;
+    private final PerfilService perfilService;
 
-    public Perfil verPerfil(String userId) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+    public PerfilController(PerfilService perfilService) {
+        this.perfilService = perfilService;
+    }
+
+    public PerfilPublicoDTO verPerfil(String userId) {
+        return perfilService.verPerfil(userId);
     }
 
     public UUID crearPerfil(String userId, DatosPerfilDTO datos) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return perfilService.crearPerfil(userId, datos);
     }
 
     public void actualizarPerfil(String userId, DatosPerfilDTO datos) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        perfilService.actualizarPerfil(userId, datos);
     }
 
     public void darDeBaja(String userId) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        perfilService.darDeBaja(userId);
     }
 }

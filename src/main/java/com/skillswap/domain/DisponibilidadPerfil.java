@@ -14,6 +14,9 @@ public class DisponibilidadPerfil {
     }
 
     public DisponibilidadPerfil(Instant inicio, Instant fin) {
+        if (inicio == null || fin == null || !inicio.isBefore(fin)) {
+            throw new IllegalArgumentException("La disponibilidad debe tener inicio anterior al fin");
+        }
         this.inicio = inicio;
         this.fin = fin;
     }
@@ -27,10 +30,13 @@ public class DisponibilidadPerfil {
     }
 
     public boolean esValida() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return inicio != null && fin != null && inicio.isBefore(fin);
     }
 
     public boolean seSuperponeCon(DisponibilidadPerfil otra) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (otra == null || !esValida() || !otra.esValida()) {
+            return false;
+        }
+        return inicio.isBefore(otra.fin) && otra.inicio.isBefore(fin);
     }
 }

@@ -36,6 +36,18 @@ public class Calificacion {
     }
 
     public Calificacion(UUID contratacionId, String calificadorId, String calificadoId, int puntaje) {
+        if (contratacionId == null) {
+            throw new IllegalArgumentException("La contratacion es obligatoria");
+        }
+        if (calificadorId == null || calificadorId.isBlank() || calificadoId == null || calificadoId.isBlank()) {
+            throw new IllegalArgumentException("Calificador y calificado son obligatorios");
+        }
+        if (calificadorId.equals(calificadoId)) {
+            throw new IllegalArgumentException("Una persona no puede calificarse a si misma");
+        }
+        if (puntaje < 1 || puntaje > 5) {
+            throw new IllegalArgumentException("El puntaje debe estar entre 1 y 5");
+        }
         this.id = UUID.randomUUID();
         this.contratacionId = contratacionId;
         this.calificadorId = calificadorId;
@@ -68,6 +80,6 @@ public class Calificacion {
     }
 
     public boolean esVerificada() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return contratacion != null && "COMPLETADA".equals(contratacion.getEstado());
     }
 }

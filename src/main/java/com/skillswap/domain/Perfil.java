@@ -16,6 +16,7 @@ import org.hibernate.annotations.FetchMode;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -66,10 +67,10 @@ public class Perfil {
 
     public Perfil(String userId, String nombreVisible, String biografia, ZoneId zonaHoraria) {
         this.id = UUID.randomUUID();
-        this.userId = userId;
-        this.nombreVisible = nombreVisible;
-        this.biografia = biografia;
-        this.zonaHoraria = zonaHoraria;
+        this.userId = validarUserId(userId);
+        this.nombreVisible = validarNombre(nombreVisible);
+        this.biografia = normalizarBiografia(biografia);
+        this.zonaHoraria = validarZona(zonaHoraria);
         this.habilidades = new HashSet<>();
         this.intereses = new HashSet<>();
         this.activo = true;
@@ -121,34 +122,108 @@ public class Perfil {
     }
 
     public void actualizarDatos(String nombre, String biografia, ZoneId zona) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        asegurarActivo();
+        this.nombreVisible = validarNombre(nombre);
+        this.biografia = normalizarBiografia(biografia);
+        this.zonaHoraria = validarZona(zona);
     }
 
     public void agregarHabilidad(Habilidad habilidad) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        asegurarActivo();
+        if (habilidad == null) {
+            throw new IllegalArgumentException("La habilidad es obligatoria");
+        }
+        habilidades.add(habilidad);
     }
 
     public void quitarHabilidad(Habilidad habilidad) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        asegurarActivo();
+        if (habilidad == null) {
+            throw new IllegalArgumentException("La habilidad es obligatoria");
+        }
+        habilidades.remove(habilidad);
     }
 
     public void definirDisponibilidad(List<DisponibilidadPerfil> intervalos) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        asegurarActivo();
+        if (intervalos == null || intervalos.stream().anyMatch(intervalo -> intervalo == null || !intervalo.esValida())) {
+            throw new IllegalArgumentException("La disponibilidad contiene intervalos invalidos");
+        }
+        disponibilidad.clear();
+        disponibilidad.addAll(intervalos);
     }
 
     public void darDeBaja() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        activo = false;
     }
 
     public void recalcularReputacion(List<Calificacion> calificacionesVerificadas) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (calificacionesVerificadas == null) {
+            throw new IllegalArgumentException("Las calificaciones son obligatorias");
+        }
+        reputacion = calificacionesVerificadas.stream()
+                .mapToInt(Calificacion::getPuntaje)
+                .average()
+                .orElse(0.0);
     }
 
     public void actualizarIntereses(Set<String> intereses) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        asegurarActivo();
+        if (intereses == null) {
+            throw new IllegalArgumentException("Los intereses son obligatorios");
+        }
+        Set<String> normalizados = new HashSet<>();
+        for (String interes : intereses) {
+            if (interes == null || interes.isBlank()) {
+                throw new IllegalArgumentException("Los intereses no pueden estar vacios");
+            }
+            normalizados.add(interes.trim());
+        }
+        this.intereses.clear();
+        this.intereses.addAll(normalizados);
     }
 
     public double obtenerReputacion() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return reputacion;
+    }
+
+    public void reemplazarHabilidades(Collection<Habilidad> nuevasHabilidades) {
+        asegurarActivo();
+        if (nuevasHabilidades == null || nuevasHabilidades.stream().anyMatch(habilidad -> habilidad == null)) {
+            throw new IllegalArgumentException("Las habilidades no pueden contener valores nulos");
+        }
+        habilidades.clear();
+        habilidades.addAll(nuevasHabilidades);
+    }
+
+    private void asegurarActivo() {
+        if (!activo) {
+            throw new IllegalStateException("No se puede modificar un perfil dado de baja");
+        }
+    }
+
+    private static String validarUserId(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("El userId es obligatorio");
+        }
+        return userId.trim();
+    }
+
+    private static String validarNombre(String nombre) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre visible es obligatorio");
+        }
+        return nombre.trim();
+    }
+
+    private static ZoneId validarZona(ZoneId zona) {
+        if (zona == null) {
+            throw new IllegalArgumentException("La zona horaria es obligatoria");
+        }
+        return zona;
+    }
+
+    private static String normalizarBiografia(String biografia) {
+        return biografia == null ? "" : biografia.trim();
     }
 }

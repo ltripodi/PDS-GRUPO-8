@@ -50,6 +50,17 @@ public class JpaPublicacionRepository extends SimpleJpaRepository<Publicacion, U
     }
 
     @Override
+    public List<Publicacion> listarPropias(String userId) {
+        return JPAUtil.consultar(em -> em
+                .createQuery("SELECT p FROM Publicacion p "
+                        + "LEFT JOIN p.perfil perfil LEFT JOIN p.organizacion organizacion "
+                        + "WHERE perfil.userId = :userId OR organizacion.userIdAutorizado = :userId "
+                        + "ORDER BY p.fechaCreacion DESC, p.id", Publicacion.class)
+                .setParameter("userId", userId)
+                .getResultList());
+    }
+
+    @Override
     public Pagina<Publicacion> buscar(FiltrosBusqueda filtros, int pagina, int tamanio) {
         // Solo se buscan publicaciones PUBLICADAS. "pagina" es base 0.
         // precioMinimo / precioMaximo / reputacionMinima en 0 significan "sin filtro".
@@ -122,12 +133,17 @@ public class JpaPublicacionRepository extends SimpleJpaRepository<Publicacion, U
     public Pagina<Publicacion> listarPropiasPaginado(String userId, int pagina, int tamanio) {
         return JPAUtil.consultar(em -> {
             Long total = em
-                    .createQuery("SELECT COUNT(p) FROM Publicacion p WHERE p.perfil.userId = :userId", Long.class)
+                    .createQuery("SELECT COUNT(p) FROM Publicacion p "
+                            + "LEFT JOIN p.perfil perfil LEFT JOIN p.organizacion organizacion "
+                            + "WHERE perfil.userId = :userId OR organizacion.userIdAutorizado = :userId", Long.class)
                     .setParameter("userId", userId)
                     .getSingleResult();
 
             List<Publicacion> elementos = em
-                    .createQuery("SELECT p FROM Publicacion p WHERE p.perfil.userId = :userId ORDER BY p.fechaCreacion DESC, p.id", Publicacion.class)
+                    .createQuery("SELECT p FROM Publicacion p "
+                            + "LEFT JOIN p.perfil perfil LEFT JOIN p.organizacion organizacion "
+                            + "WHERE perfil.userId = :userId OR organizacion.userIdAutorizado = :userId "
+                            + "ORDER BY p.fechaCreacion DESC, p.id", Publicacion.class)
                     .setParameter("userId", userId)
                     .setFirstResult(pagina * tamanio)
                     .setMaxResults(tamanio)

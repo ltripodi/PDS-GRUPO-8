@@ -103,11 +103,17 @@ public class Publicacion {
 
     public Publicacion(UUID autorId, TipoPublicacion tipo, String titulo, String descripcion, Categoria categoria,
                        Modalidad modalidad, SkillCoins precioBase, int duracionMinutos, int cupo) {
+        if (autorId == null || tipo == null || categoria == null || modalidad == null || precioBase == null) {
+            throw new IllegalArgumentException("Autor, tipo, categoria, modalidad y precio son obligatorios");
+        }
+        if (duracionMinutos <= 0 || cupo <= 0) {
+            throw new IllegalArgumentException("La duracion y el cupo deben ser positivos");
+        }
         this.id = UUID.randomUUID();
         this.autorId = autorId;
         this.tipo = tipo;
-        this.titulo = titulo;
-        this.descripcion = descripcion;
+        this.titulo = titulo == null ? "" : titulo.trim();
+        this.descripcion = descripcion == null ? "" : descripcion.trim();
         this.categoria = categoria;
         this.modalidad = modalidad;
         this.precioBase = precioBase;
@@ -116,6 +122,33 @@ public class Publicacion {
         this.estado = EstadoPublicacion.BORRADOR;
         this.etiquetas = new HashSet<>();
         this.fechaCreacion = LocalDateTime.now();
+    }
+
+    public static Publicacion crearOferta(Perfil autor, TipoPublicacion tipo, String titulo, String descripcion,
+                                          Categoria categoria, Modalidad modalidad, SkillCoins precioBase,
+                                          int duracionMinutos, int cupo) {
+        if (autor == null || !autor.isActivo()) {
+            throw new IllegalArgumentException("La oferta requiere un perfil activo");
+        }
+        if (tipo != TipoPublicacion.MENTORIA && tipo != TipoPublicacion.SERVICIO) {
+            throw new IllegalArgumentException("Un perfil solo puede crear mentorias o servicios");
+        }
+        Publicacion publicacion = new Publicacion(autor.getId(), tipo, titulo, descripcion, categoria, modalidad,
+                precioBase, duracionMinutos, cupo);
+        publicacion.perfil = autor;
+        return publicacion;
+    }
+
+    public static Publicacion crearDesafio(Organizacion autora, String titulo, String descripcion,
+                                           Categoria categoria, Modalidad modalidad, SkillCoins precioBase,
+                                           int duracionMinutos, int cupo) {
+        if (autora == null) {
+            throw new IllegalArgumentException("El desafio requiere una organizacion autora");
+        }
+        Publicacion publicacion = new Publicacion(autora.getId(), TipoPublicacion.DESAFIO, titulo, descripcion,
+                categoria, modalidad, precioBase, duracionMinutos, cupo);
+        publicacion.organizacion = autora;
+        return publicacion;
     }
 
     public UUID getId() {
@@ -191,42 +224,125 @@ public class Publicacion {
     }
 
     public void editarDatos(String titulo, String descripcion, SkillCoins precio) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        asegurarBorrador();
+        if (precio == null) {
+            throw new IllegalArgumentException("El precio es obligatorio");
+        }
+        this.titulo = titulo == null ? "" : titulo.trim();
+        this.descripcion = descripcion == null ? "" : descripcion.trim();
+        this.precioBase = precio;
     }
 
     public void publicar(String actorId) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (estado != EstadoPublicacion.BORRADOR && estado != EstadoPublicacion.PAUSADA) {
+            throw new IllegalStateException("Solo un borrador o una publicacion pausada puede publicarse");
+        }
+        validarParaPublicar();
+        transicionar(EstadoPublicacion.PUBLICADA, actorId, "publicacion");
     }
 
     public void pausar(String actorId) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (estado != EstadoPublicacion.PUBLICADA) {
+            throw new IllegalStateException("Solo una publicacion publicada puede pausarse");
+        }
+        transicionar(EstadoPublicacion.PAUSADA, actorId, "pausa");
     }
 
     public void cerrar(String actorId) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (estado != EstadoPublicacion.PUBLICADA && estado != EstadoPublicacion.PAUSADA) {
+            throw new IllegalStateException("Solo una publicacion publicada o pausada puede cerrarse");
+        }
+        transicionar(EstadoPublicacion.CERRADA, actorId, "cierre");
     }
 
     public void cancelar(String actorId, String motivo) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (estado == EstadoPublicacion.CERRADA || estado == EstadoPublicacion.CANCELADA) {
+            throw new IllegalStateException("Una publicacion cerrada o cancelada no puede cancelarse");
+        }
+        if (motivo == null || motivo.isBlank()) {
+            throw new IllegalArgumentException("La cancelacion requiere un motivo");
+        }
+        transicionar(EstadoPublicacion.CANCELADA, actorId, motivo.trim());
     }
 
     public boolean admiteSolicitud() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return estado == EstadoPublicacion.PUBLICADA;
     }
 
     public void agregarFranja(FranjaHoraria franja) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        asegurarBorrador();
+        if (franja == null) {
+            throw new IllegalArgumentException("La franja es obligatoria");
+        }
+        franjas.add(franja);
     }
 
     public void cambiarClasificacion(Categoria categoria, Modalidad modalidad) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        asegurarBorrador();
+        if (categoria == null || modalidad == null) {
+            throw new IllegalArgumentException("La categoria y modalidad son obligatorias");
+        }
+        this.categoria = categoria;
+        this.modalidad = modalidad;
     }
 
     public void configurarCapacidad(int duracionMinutos, int cupo) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        asegurarBorrador();
+        if (duracionMinutos <= 0 || cupo <= 0) {
+            throw new IllegalArgumentException("La duracion y el cupo deben ser positivos");
+        }
+        this.duracionMinutos = duracionMinutos;
+        this.cupo = cupo;
     }
 
     public void actualizarEtiquetas(Set<String> etiquetas) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        asegurarBorrador();
+        if (etiquetas == null) {
+            throw new IllegalArgumentException("Las etiquetas son obligatorias");
+        }
+        Set<String> normalizadas = new HashSet<>();
+        for (String etiqueta : etiquetas) {
+            if (etiqueta == null || etiqueta.isBlank()) {
+                throw new IllegalArgumentException("Las etiquetas no pueden estar vacias");
+            }
+            normalizadas.add(etiqueta.trim());
+        }
+        this.etiquetas.clear();
+        this.etiquetas.addAll(normalizadas);
+    }
+
+    private void asegurarBorrador() {
+        if (estado != EstadoPublicacion.BORRADOR) {
+            throw new IllegalStateException("Solo se puede editar una publicacion en borrador");
+        }
+    }
+
+    private void validarParaPublicar() {
+        if (titulo == null || titulo.isBlank()) {
+            throw new IllegalStateException("Una publicacion requiere titulo para publicarse");
+        }
+        if (categoria == null || modalidad == null || precioBase == null || duracionMinutos <= 0 || cupo <= 0) {
+            throw new IllegalStateException("La publicacion no tiene todos los datos obligatorios");
+        }
+        if (franjas.isEmpty() || franjas.stream().anyMatch(franja -> franja == null
+                || franja.getInicio() == null || franja.getFin() == null
+                || !franja.getInicio().isBefore(franja.getFin()) || franja.getCupo() <= 0)) {
+            throw new IllegalStateException("Una publicacion requiere al menos una franja valida");
+        }
+        if (tipo == TipoPublicacion.DESAFIO && organizacion == null) {
+            throw new IllegalStateException("Un desafio requiere una organizacion autora");
+        }
+        if (tipo != TipoPublicacion.DESAFIO && organizacion != null) {
+            throw new IllegalStateException("Solo una organizacion puede ser autora de un desafio");
+        }
+    }
+
+    private void transicionar(EstadoPublicacion destino, String actorId, String motivo) {
+        if (actorId == null || actorId.isBlank()) {
+            throw new IllegalArgumentException("El actor de la transicion es obligatorio");
+        }
+        EstadoPublicacion origen = estado;
+        estado = destino;
+        historial.add(new RegistroTransicion(actorId.trim(), origen.name(), destino.name(), motivo));
     }
 }
