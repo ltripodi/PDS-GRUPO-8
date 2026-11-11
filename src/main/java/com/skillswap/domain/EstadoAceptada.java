@@ -1,9 +1,6 @@
 package com.skillswap.domain;
 
-/*
- * ACEPTADA: el proveedor acepto y ya hay una reserva con el cupo bloqueado.
- * Acciones validas (consigna 4.5): pagar, cancelar o proponer reprogramacion.
- */
+/* ACEPTADA: pagar, cancelar o proponer reprogramacion. */
 public class EstadoAceptada extends EstadoContratacionBase {
 
     @Override
@@ -21,21 +18,13 @@ public class EstadoAceptada extends EstadoContratacionBase {
         ctx.cambiarEstado(new EstadoCancelada());
     }
 
-    /*
-     * Proponer no cambia el estado: solo habilita la accion.
-     * La propuesta en si la crea y guarda la Contratacion.
-     */
+    /* Permitido; no cambia el estado. */
     @Override
     public void proponerReprogramacion(Contratacion ctx) {
-        // Permitido: la contratacion sigue ACEPTADA.
     }
 
-    /*
-     * Decision del equipo: si ambas partes aceptan la propuesta antes de pagar,
-     * la reserva se mueve igual (la sesion todavia no comenzo).
-     */
+    /* Decision del equipo: tambien se puede reprogramar antes de pagar. */
     @Override
     public void aplicarReprogramacion(Contratacion ctx) {
-        // Permitido: la contratacion sigue ACEPTADA, cambia la franja de la reserva.
     }
 }

@@ -4,9 +4,7 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 
-/*
- * Evento de dominio inmutable (Observer: es el "mensaje" que reciben los observadores).
- */
+/* Evento inmutable que reciben los observadores (Observer). */
 public class EventoDominio {
     private final TipoEvento tipo;
     private final Instant ocurridoEn;

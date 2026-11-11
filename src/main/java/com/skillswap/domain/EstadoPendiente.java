@@ -1,9 +1,6 @@
 package com.skillswap.domain;
 
-/*
- * PENDIENTE: el cliente solicito y el proveedor todavia no respondio.
- * Acciones validas (consigna 4.5): aceptar o rechazar.
- */
+/* PENDIENTE: aceptar o rechazar. */
 public class EstadoPendiente extends EstadoContratacionBase {
 
     @Override

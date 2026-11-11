@@ -31,10 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/*
- * Integrante 3: solicitudes, reservas, reprogramaciones y estados de contratacion
- * (consigna 4.4 y 4.5). Pruebas de dominio (State) y de casos de uso con puertos simulados.
- */
+/* Integrante 3 (4.4 y 4.5): dominio (State) y casos de uso con puertos simulados. */
 class IntegranteTresTest {
 
     private Perfil cliente;
@@ -62,9 +59,7 @@ class IntegranteTresTest {
         return new Contratacion(cliente.getId(), proveedor.getId(), new SkillCoins(100), solicitud);
     }
 
-    // ------------------------------------------------------------------
-    // Dominio: State
-    // ------------------------------------------------------------------
+    // ---------- dominio: State ----------
 
     @Test
     void flujoCompletoRecorreLosEstadosYRegistraElHistorial() {
@@ -122,9 +117,7 @@ class IntegranteTresTest {
         assertThrows(IllegalArgumentException.class, () -> EstadoContratacionBase.desdeNombre("INVENTADO"));
     }
 
-    // ------------------------------------------------------------------
-    // Dominio: reserva, cupo y cancelacion
-    // ------------------------------------------------------------------
+    // ---------- dominio: reserva y cancelacion ----------
 
     @Test
     void noSePuedeAceptarSiLaFranjaNoTieneCupo() {
@@ -152,9 +145,7 @@ class IntegranteTresTest {
         assertEquals("No puedo asistir", contratacion.getHistorial().get(1).getMotivo());
     }
 
-    // ------------------------------------------------------------------
-    // Dominio: reprogramacion
-    // ------------------------------------------------------------------
+    // ---------- dominio: reprogramacion ----------
 
     @Test
     void laReprogramacionSoloSeAplicaCuandoAceptanAmbasPartes() {
@@ -187,9 +178,7 @@ class IntegranteTresTest {
                 () -> contratacion.proponerReprogramacion(cliente.getId(), otraFranja));
     }
 
-    // ------------------------------------------------------------------
-    // Dominio: reglas al solicitar
-    // ------------------------------------------------------------------
+    // ---------- dominio: solicitud ----------
 
     @Test
     void solicitudRespetaLasReglasDeNegocio() {
@@ -205,9 +194,7 @@ class IntegranteTresTest {
                 () -> Solicitud.crear(cliente, publicacion, franja.getId(), "", "Objetivo"));
     }
 
-    // ------------------------------------------------------------------
-    // Casos de uso con puertos simulados
-    // ------------------------------------------------------------------
+    // ---------- casos de uso ----------
 
     @Test
     void servicioSolicitaAceptaYPublicaLosEventos() {
@@ -246,7 +233,7 @@ class IntegranteTresTest {
         ContratacionDTO dto = escenario.servicio.solicitar("cliente",
                 new DatosSolicitudDTO(publicacion.getId(), franja.getId(), "", "Aprender"));
         escenario.servicio.aceptar("proveedor", dto.getId());
-        // El pago lo hace PagoService (integrante 4); aca se simula su efecto sobre el estado.
+        // Simula el efecto de PagoService (integrante 4).
         escenario.contrataciones.buscarPorId(dto.getId()).orElseThrow().confirmarPago(cliente.getId());
 
         escenario.servicio.cancelar("cliente", dto.getId(), "Imprevisto");
@@ -269,9 +256,7 @@ class IntegranteTresTest {
         assertEquals(id, pagina.getElementos().get(0).getId());
     }
 
-    // ------------------------------------------------------------------
-    // Puertos simulados
-    // ------------------------------------------------------------------
+    // ---------- puertos simulados ----------
 
     private static PoliticaCancelacion politicaFija(int porcentaje) {
         return (total, anticipacion) -> new SkillCoins(total.getValor() * porcentaje / 100);

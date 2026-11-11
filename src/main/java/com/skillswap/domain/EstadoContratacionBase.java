@@ -1,18 +1,12 @@
 package com.skillswap.domain;
 
 /*
- * State Pattern - clase base de los estados de una Contratacion (consigna 4.5).
- *
- * Por defecto TODAS las acciones son invalidas: cada estado concreto sobrescribe
- * solo las acciones que la tabla de la consigna permite para ese estado.
- * Asi una transicion invalida la rechaza el dominio, sin ifs en Contratacion.
+ * State Pattern - base: todas las acciones son invalidas por defecto.
+ * Cada estado sobrescribe solo las que permite la tabla 4.5.
  */
 public abstract class EstadoContratacionBase implements EstadoContratacion {
 
-    /*
-     * Reconstruye el objeto State a partir del nombre guardado en la DB.
-     * Permite persistir el estado como texto y seguir usando polimorfismo en memoria.
-     */
+    /* Reconstruye el State a partir del nombre guardado en la DB. */
     public static EstadoContratacion desdeNombre(String nombre) {
         if (nombre == null || nombre.isBlank()) {
             return new EstadoPendiente();
@@ -30,9 +24,6 @@ public abstract class EstadoContratacionBase implements EstadoContratacion {
         };
     }
 
-    /*
-     * Cada estado concreto conoce su propio nombre.
-     */
     @Override
     public abstract String nombre();
 
@@ -76,9 +67,7 @@ public abstract class EstadoContratacionBase implements EstadoContratacion {
         throw new IllegalStateException("No se puede reprogramar una contratacion en estado " + nombre());
     }
 
-    /*
-     * Por defecto ningun estado habilita calificar; solo COMPLETADA lo sobrescribe.
-     */
+    /* Solo COMPLETADA habilita calificar. */
     @Override
     public boolean permiteCalificar() {
         return false;

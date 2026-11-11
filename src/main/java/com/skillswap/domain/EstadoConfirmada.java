@@ -1,10 +1,8 @@
 package com.skillswap.domain;
 
 /*
- * CONFIRMADA: el cliente pago con SkillCoins.
- * Acciones validas (consigna 4.5): iniciar, reprogramar o cancelar segun politica.
- * El calculo del reintegro (100 / 50 / 0 %) lo resuelve la PoliticaCancelacion (Strategy),
- * no el estado: el estado solo decide SI se puede cancelar.
+ * CONFIRMADA: iniciar, reprogramar o cancelar.
+ * El monto del reintegro lo calcula PoliticaCancelacion (Strategy), no el estado.
  */
 public class EstadoConfirmada extends EstadoContratacionBase {
 
@@ -23,13 +21,13 @@ public class EstadoConfirmada extends EstadoContratacionBase {
         ctx.cambiarEstado(new EstadoCancelada());
     }
 
+    /* Permitido; no cambia el estado. */
     @Override
     public void proponerReprogramacion(Contratacion ctx) {
-        // Permitido: la contratacion sigue CONFIRMADA.
     }
 
+    /* Permitido; no cambia el estado. */
     @Override
     public void aplicarReprogramacion(Contratacion ctx) {
-        // Permitido: la contratacion sigue CONFIRMADA, cambia la franja de la reserva.
     }
 }

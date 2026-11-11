@@ -1,9 +1,6 @@
 package com.skillswap.domain;
 
-/*
- * RECHAZADA: estado final. Solo se puede consultar el historial.
- * No sobrescribe ninguna accion: todas las rechaza la clase base.
- */
+/* RECHAZADA: estado final, solo consultar historial. */
 public class EstadoRechazada extends EstadoContratacionBase {
 
     @Override

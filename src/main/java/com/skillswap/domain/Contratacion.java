@@ -25,15 +25,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /*
- * State Pattern - Context.
- *
- * La Contratacion NO decide si una accion es valida segun su estado: lo delega en
- * estadoActual (EstadoPendiente, EstadoAceptada, ...). Ella se ocupa de lo que es
- * comun a todas las transiciones: validar quien es el actor, mantener la reserva
- * y registrar cada transicion en el historial inmutable (regla de negocio 5).
- *
- * Los actores se identifican por el id de Perfil (clienteId / proveedorId).
- * El servicio de aplicacion traduce el userId de identidad a ese id.
+ * State Pattern - Context: delega en estadoActual si una accion es valida.
+ * Ella valida el actor (id de Perfil), maneja la reserva y registra el historial.
  */
 @Entity
 @Table(name = "contrataciones")
@@ -51,9 +44,7 @@ public class Contratacion {
     @AttributeOverride(name = "valor", column = @Column(name = "precio"))
     private SkillCoins precio;
 
-    /*
-     * State: el objeto es comportamiento en memoria; en la DB se guarda el nombre (campo "estado").
-     */
+    /* State en memoria; en la DB se guarda el nombre. */
     @Transient
     private EstadoContratacion estadoActual;
 
@@ -98,22 +89,14 @@ public class Contratacion {
         this.estado = estadoActual.nombre();
     }
 
-    /*
-     * Reconstruye el objeto State a partir del nombre persistido en la DB.
-     */
     @PostLoad
     private void reconstruirEstadoActual() {
         this.estadoActual = EstadoContratacionBase.desdeNombre(this.estado);
     }
 
-    // ------------------------------------------------------------------
-    // Acciones de la tabla 4.5: cada una valida el actor, delega en el
-    // State y deja asentada la transicion en el historial.
-    // ------------------------------------------------------------------
+    // Acciones de la tabla 4.5: validar actor -> delegar en el State -> registrar historial.
 
-    /*
-     * PENDIENTE -> ACEPTADA. La aceptacion crea la reserva y bloquea el cupo de la franja.
-     */
+    /* Crea la reserva y bloquea el cupo. */
     public void aceptar(UUID actorId) {
         validarProveedor(actorId, "aceptar");
         String origen = estado;
@@ -124,9 +107,6 @@ public class Contratacion {
         registrarTransicion(actorId, origen, "Solicitud aceptada por el proveedor");
     }
 
-    /*
-     * PENDIENTE -> RECHAZADA. No hay reserva que liberar.
-     */
     public void rechazar(UUID actorId) {
         validarProveedor(actorId, "rechazar");
         String origen = estado;
@@ -136,10 +116,7 @@ public class Contratacion {
         registrarTransicion(actorId, origen, "Solicitud rechazada por el proveedor");
     }
 
-    /*
-     * ACEPTADA -> CONFIRMADA. El movimiento de SkillCoins lo hace PagoService;
-     * aca solo se valida y se registra el cambio de estado.
-     */
+    /* El movimiento de SkillCoins lo hace PagoService. */
     public void confirmarPago(UUID actorId) {
         validarCliente(actorId, "pagar");
         String origen = estado;
@@ -149,10 +126,7 @@ public class Contratacion {
         registrarTransicion(actorId, origen, "Pago confirmado con SkillCoins");
     }
 
-    /*
-     * ACEPTADA / CONFIRMADA -> CANCELADA. Libera el cupo reservado.
-     * El monto del reintegro lo calcula la PoliticaCancelacion (Strategy) en aplicacion.
-     */
+    /* Libera el cupo. El reintegro lo calcula PoliticaCancelacion en el service. */
     public void cancelar(UUID actorId, String motivo) {
         validarParticipante(actorId, "cancelar");
         if (motivo == null || motivo.isBlank()) {
@@ -168,9 +142,7 @@ public class Contratacion {
         registrarTransicion(actorId, origen, motivo);
     }
 
-    /*
-     * CONFIRMADA -> EN_CURSO. Decision del equipo: inicia el proveedor.
-     */
+    /* Decision del equipo: inicia el proveedor. */
     public void iniciar(UUID actorId) {
         validarProveedor(actorId, "iniciar");
         String origen = estado;
@@ -180,9 +152,7 @@ public class Contratacion {
         registrarTransicion(actorId, origen, "Sesion iniciada");
     }
 
-    /*
-     * EN_CURSO -> COMPLETADA. Decision del equipo: completa el proveedor.
-     */
+    /* Decision del equipo: completa el proveedor. */
     public void completar(UUID actorId) {
         validarProveedor(actorId, "completar");
         String origen = estado;
@@ -192,17 +162,11 @@ public class Contratacion {
         registrarTransicion(actorId, origen, "Sesion completada");
     }
 
-    /*
-     * Le pregunta al State si habilita calificar (solo COMPLETADA).
-     */
     public boolean habilitaCalificacion() {
         return estadoActual.permiteCalificar();
     }
 
-    /*
-     * Reprogramacion paso 1: una de las partes propone una nueva franja.
-     * Quien propone ya la acepta; falta la aceptacion de la otra parte.
-     */
+    /* Reprogramacion 1/2: quien propone ya acepta; falta la otra parte. */
     public void proponerReprogramacion(UUID actorId, FranjaHoraria nuevaFranja) {
         validarParticipante(actorId, "proponer una reprogramacion de");
         estadoActual.proponerReprogramacion(this);
@@ -226,10 +190,7 @@ public class Contratacion {
         propuestas.add(propuesta);
     }
 
-    /*
-     * Reprogramacion paso 2: la otra parte acepta y, si ya aceptaron ambas,
-     * la reserva se mueve a la nueva franja (libera la vieja y ocupa la nueva).
-     */
+    /* Reprogramacion 2/2: la otra parte acepta y la reserva se mueve de franja. */
     public void aplicarReprogramacion(UUID actorId) {
         validarParticipante(actorId, "reprogramar");
         estadoActual.aplicarReprogramacion(this);
@@ -250,19 +211,11 @@ public class Contratacion {
         registrarTransicion(actorId, estado, "Reprogramada a la franja " + nuevaFranja.getId());
     }
 
-    // ------------------------------------------------------------------
-    // Usado solo por los estados concretos (mismo paquete): por eso no es public.
-    // Nadie de afuera puede saltear el State y forzar un estado.
-    // ------------------------------------------------------------------
-
+    /* Package-private: solo los estados pueden cambiar el estado. */
     void cambiarEstado(EstadoContratacion nuevoEstado) {
         this.estadoActual = nuevoEstado;
         this.estado = nuevoEstado.nombre();
     }
-
-    // ------------------------------------------------------------------
-    // Helpers privados
-    // ------------------------------------------------------------------
 
     public boolean esParticipante(UUID perfilId) {
         return clienteId.equals(perfilId) || proveedorId.equals(perfilId);
@@ -286,9 +239,7 @@ public class Contratacion {
         }
     }
 
-    /*
-     * Consigna 4.4: "una reserva puede reprogramarse antes de comenzar".
-     */
+    /* Consigna 4.4: solo se reprograma antes de comenzar. */
     private void validarQueNoComenzo() {
         FranjaHoraria actual = buscarFranjaDePublicacion(reserva.getFranjaId())
                 .orElseThrow(() -> new IllegalStateException("La franja reservada ya no existe"));
@@ -325,10 +276,6 @@ public class Contratacion {
     private void registrarTransicion(UUID actorId, String origen, String motivo) {
         historial.add(new RegistroTransicion(actorId.toString(), origen, estado, motivo));
     }
-
-    // ------------------------------------------------------------------
-    // Getters
-    // ------------------------------------------------------------------
 
     public UUID getId() {
         return id;

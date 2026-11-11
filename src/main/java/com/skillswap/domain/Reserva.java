@@ -11,13 +11,8 @@ import jakarta.persistence.Table;
 import java.util.UUID;
 
 /*
- * Reserva de cupo en una FranjaHoraria (consigna 4.4).
- *
- * Crear una reserva OCUPA el cupo; liberarla lo DEVUELVE. Asi el cupo de la franja
- * y la reserva no pueden quedar desincronizados (nadie ocupa un cupo "a mano").
- *
- * La sobreventa concurrente (dos aceptaciones por el ultimo cupo) la frena el
- * @Version de FranjaHoraria (optimistic locking) al hacer commit.
+ * Crear una reserva ocupa el cupo y liberarla lo devuelve.
+ * La sobreventa concurrente la frena el @Version de FranjaHoraria.
  */
 @Entity
 @Table(name = "reservas")
@@ -61,10 +56,7 @@ public class Reserva {
         this.vigente = true;
     }
 
-    /*
-     * Mueve la reserva a otra franja: primero ocupa la nueva (si no hay cupo, falla
-     * sin haber tocado nada) y despues libera la vieja.
-     */
+    /* Primero ocupa la nueva franja y despues libera la vieja. */
     public void reprogramar(FranjaHoraria nueva) {
         validarVigente();
         if (nueva == null) {
@@ -86,9 +78,7 @@ public class Reserva {
         this.franjaId = nueva.getId();
     }
 
-    /*
-     * Devuelve el cupo a la franja (por ejemplo, al cancelar). Solo una vez.
-     */
+    /* Devuelve el cupo (solo una vez). */
     public void liberar() {
         validarVigente();
         devolverCupo();

@@ -1,9 +1,6 @@
 package com.skillswap.domain;
 
-/*
- * CANCELADA: estado final. Solo se puede consultar el historial.
- * No sobrescribe ninguna accion: todas las rechaza la clase base.
- */
+/* CANCELADA: estado final, solo consultar historial. */
 public class EstadoCancelada extends EstadoContratacionBase {
 
     @Override

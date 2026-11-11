@@ -7,13 +7,7 @@ import jakarta.persistence.Table;
 
 import java.util.UUID;
 
-/*
- * Propuesta de mover una reserva a otra franja (consigna 4.4):
- * "una reserva puede reprogramarse antes de comenzar si ambas partes aceptan".
- *
- * Solo guarda el "doble consentimiento". No sabe quien es cliente o proveedor:
- * eso lo resuelve la Contratacion (Information Expert) y llama al metodo que corresponde.
- */
+/* Guarda el doble consentimiento; quien es cliente o proveedor lo decide Contratacion. */
 @Entity
 @Table(name = "propuestas_reprogramacion")
 public class PropuestaReprogramacion {
@@ -54,16 +48,10 @@ public class PropuestaReprogramacion {
         this.aceptacionProveedor = true;
     }
 
-    /*
-     * La reprogramacion solo se aplica cuando las dos partes estan de acuerdo.
-     */
     public boolean aceptadaPorAmbos() {
         return aceptacionCliente && aceptacionProveedor;
     }
 
-    /*
-     * Una propuesta ya aceptada por ambos quedo resuelta: no se puede volver a tocar.
-     */
     private void validarAbierta() {
         if (aceptadaPorAmbos()) {
             throw new IllegalStateException("La propuesta de reprogramacion ya fue aceptada por ambas partes");

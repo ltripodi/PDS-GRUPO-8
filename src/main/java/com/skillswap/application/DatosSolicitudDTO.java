@@ -2,12 +2,7 @@ package com.skillswap.application;
 
 import java.util.UUID;
 
-/*
- * DTO de entrada (command object) para ContratacionService.solicitar(...).
- * Agrupa los datos que el cliente completa en la UI para no pasar una lista larga
- * de parametros (consigna 9: "command objects o modelos de entrada simples").
- * Inmutable: solo constructor y getters, igual que los DTO del ejemplo del profe.
- */
+/* DTO de entrada (command object) para solicitar. */
 public class DatosSolicitudDTO {
 
     private final UUID publicacionId;

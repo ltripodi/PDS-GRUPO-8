@@ -10,14 +10,7 @@ import com.skillswap.application.PagoService;
 import java.util.List;
 import java.util.UUID;
 
-/*
- * Controller delgado (consigna 9): recibe la accion de la UI, valida los datos de
- * entrada y delega en el caso de uso. No tiene SQL, ni reglas de negocio, ni
- * conoce entidades: solo devuelve DTOs.
- *
- * Igual que MagicCafeController del ejemplo del profe: una linea por operacion.
- * El userId llega del login simulado (servicio de identidad mock).
- */
+/* Controller delgado: valida la entrada, delega en el caso de uso y devuelve DTOs. */
 public class ContratacionController {
     private final ContratacionService contratacionService;
     private final PagoService pagoService;
@@ -27,10 +20,6 @@ public class ContratacionController {
         this.pagoService = pagoService;
     }
 
-    // ------------------------------------------------------------------
-    // Solicitud
-    // ------------------------------------------------------------------
-
     public UUID solicitar(String userId, UUID publicacionId, String mensaje, UUID franjaId, String objetivo) {
         validarUserId(userId);
         requerido(publicacionId, "La publicacion");
@@ -39,10 +28,6 @@ public class ContratacionController {
         DatosSolicitudDTO datos = new DatosSolicitudDTO(publicacionId, franjaId, mensaje, objetivo);
         return contratacionService.solicitar(userId, datos).getId();
     }
-
-    // ------------------------------------------------------------------
-    // Transiciones (tabla 4.5)
-    // ------------------------------------------------------------------
 
     public void aceptar(String userId, UUID contratacionId) {
         validar(userId, contratacionId);
@@ -54,9 +39,7 @@ public class ContratacionController {
         contratacionService.rechazar(userId, contratacionId);
     }
 
-    /*
-     * El pago es del modulo de SkillCoins (integrante 4): este controller solo lo expone.
-     */
+    /* Lo resuelve PagoService (integrante 4). */
     public void pagar(String userId, UUID contratacionId) {
         validar(userId, contratacionId);
         pagoService.pagar(userId, contratacionId);
@@ -80,10 +63,6 @@ public class ContratacionController {
         contratacionService.cancelar(userId, contratacionId, motivo);
     }
 
-    // ------------------------------------------------------------------
-    // Reprogramacion
-    // ------------------------------------------------------------------
-
     public void proponerReprogramacion(String userId, UUID contratacionId, UUID nuevaFranjaId) {
         validar(userId, contratacionId);
         requerido(nuevaFranjaId, "La nueva franja");
@@ -95,10 +74,6 @@ public class ContratacionController {
         contratacionService.aceptarReprogramacion(userId, contratacionId);
     }
 
-    // ------------------------------------------------------------------
-    // Consultas
-    // ------------------------------------------------------------------
-
     public List<ContratacionDTO> listarContrataciones(String userId) {
         validarUserId(userId);
         return contratacionService.listar(userId);
@@ -109,17 +84,13 @@ public class ContratacionController {
         return contratacionService.listarPaginado(userId, pagina, tamanio);
     }
 
-    /*
-     * Accion valida en COMPLETADA (consigna 4.5). Lo resuelve el modulo de pagos.
-     */
+    /* Lo resuelve PagoService (integrante 4). */
     public ComprobantePagoDTO consultarComprobante(String userId, UUID contratacionId) {
         validar(userId, contratacionId);
         return pagoService.consultarComprobante(userId, contratacionId);
     }
 
-    // ------------------------------------------------------------------
-    // Validacion de entrada: igual para todas las operaciones (errores uniformes).
-    // ------------------------------------------------------------------
+    // Validacion de entrada uniforme para todas las operaciones.
 
     private void validar(String userId, UUID contratacionId) {
         validarUserId(userId);

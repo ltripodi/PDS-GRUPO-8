@@ -11,13 +11,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
-/*
- * Pedido de un cliente sobre una publicacion (consigna 4.4):
- * "un cliente solicita una publicacion indicando mensaje, franja elegida y objetivo".
- *
- * Las reglas de negocio para CREAR una solicitud nueva viven en el metodo de fabrica
- * crear(...) (mismo estilo que Publicacion.crearOferta). El constructor solo arma el objeto.
- */
+/* Solicitud de un cliente (consigna 4.4). Las reglas de creacion estan en crear(...). */
 @Entity
 @Table(name = "solicitudes")
 public class Solicitud {
@@ -58,14 +52,7 @@ public class Solicitud {
         this.fechaCreacion = Instant.now();
     }
 
-    /*
-     * Factory Method con las reglas de negocio de la consigna (seccion 5):
-     *  - el perfil del cliente debe estar activo (baja logica);
-     *  - el autor no puede solicitar su propia publicacion;
-     *  - una publicacion no publicada no admite solicitudes;
-     *  - la franja elegida debe pertenecer a la publicacion y tener cupo;
-     *  - el objetivo es obligatorio.
-     */
+    /* Factory Method con las reglas de negocio de la seccion 5. */
     public static Solicitud crear(Perfil cliente, Publicacion publicacion, UUID franjaId,
                                   String mensaje, String objetivo) {
         if (cliente == null || !cliente.isActivo()) {
@@ -89,10 +76,7 @@ public class Solicitud {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("La franja elegida no pertenece a la publicacion"));
 
-        /*
-         * Chequeo temprano para dar un error claro al cliente. El bloqueo real del cupo
-         * ocurre recien al aceptar (Reserva + optimistic locking), no aca.
-         */
+        // Chequeo temprano: el cupo se bloquea recien al aceptar.
         if (!franja.hayCupo()) {
             throw new IllegalStateException("La franja elegida no tiene cupo disponible");
         }

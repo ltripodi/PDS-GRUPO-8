@@ -3,12 +3,7 @@ package com.skillswap.application;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/*
- * DTO de salida: lo que la UI necesita mostrar de una contratacion.
- * La UI nunca recibe la entidad Contratacion (consigna 10: "la UI conocera
- * interfaces de controllers, nunca repositorios ni entidades JPA").
- * Inmutable: solo constructor y getters, igual que los DTO del ejemplo del profe.
- */
+/* DTO de salida: la UI nunca recibe la entidad Contratacion. */
 public class ContratacionDTO {
 
     private final UUID id;
