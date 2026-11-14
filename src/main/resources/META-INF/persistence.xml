@@ -50,6 +50,10 @@
             <property name="hibernate.hbm2ddl.auto"
                       value="update"/>
 
+            <!-- Evita N+1: las colecciones de varias entidades se cargan en lotes (consigna, seccion 8). -->
+            <property name="hibernate.default_batch_fetch_size"
+                      value="50"/>
+
             <property name="hibernate.show_sql"
                       value="true"/>
 

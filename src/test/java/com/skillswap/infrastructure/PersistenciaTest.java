@@ -1,10 +1,14 @@
 package com.skillswap.infrastructure;
-
+import com.skillswap.application.DatosPublicacionDTO;
+import com.skillswap.application.PublicacionService;
+import com.skillswap.domain.Organizacion;
 import com.skillswap.application.BilleteraRepository;
 import com.skillswap.application.CalificacionRepository;
 import com.skillswap.application.ContratacionRepository;
 import com.skillswap.application.FiltrosBusqueda;
 import com.skillswap.application.NotificacionRepository;
+import com.skillswap.application.NotificacionService;
+import com.skillswap.application.NotificacionesObserver;
 import com.skillswap.application.Pagina;
 import com.skillswap.application.PagoRepository;
 import com.skillswap.application.PerfilRepository;
@@ -22,7 +26,9 @@ import com.skillswap.domain.FranjaHoraria;
 import com.skillswap.domain.Habilidad;
 import com.skillswap.domain.Modalidad;
 import com.skillswap.domain.Movimiento;
+import com.skillswap.domain.EventoDominio;
 import com.skillswap.domain.Notificacion;
+import com.skillswap.domain.TipoEvento;
 import com.skillswap.domain.OrdenPublicacion;
 import com.skillswap.domain.Pago;
 import com.skillswap.domain.Perfil;
@@ -43,6 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -196,7 +203,7 @@ class PersistenciaTest {
         publicar(cara);
 
         // Solo las PUBLICADAS, ordenadas por menor precio, 2 por pagina
-        FiltrosBusqueda todas = new FiltrosBusqueda(null, categoria.getId(), null, 0, 0, null, 0, OrdenPublicacion.MENOR_PRECIO);
+        FiltrosBusqueda todas = new FiltrosBusqueda(null, categoria.getId(), null, null, null, null, null, OrdenPublicacion.MENOR_PRECIO);
         Pagina<Publicacion> primera = publicaciones.buscar(todas, 0, 2);
         Pagina<Publicacion> segunda = publicaciones.buscar(todas, 1, 2);
 
@@ -205,14 +212,14 @@ class PersistenciaTest {
         assertEquals(List.of(cara.getId()), segunda.getElementos().stream().map(Publicacion::getId).toList());
 
         // Texto + modalidad + rango de precio
-        FiltrosBusqueda guitarraPresencial = new FiltrosBusqueda("guitarra", categoria.getId(), Modalidad.PRESENCIAL, 20, 60, null, 0, null);
+        FiltrosBusqueda guitarraPresencial = new FiltrosBusqueda("guitarra", categoria.getId(), Modalidad.PRESENCIAL, 20, 60, null, null, null);
         Pagina<Publicacion> resultado = publicaciones.buscar(guitarraPresencial, 0, 10);
         assertEquals(1, resultado.getTotalElementos());
         assertEquals(media.getId(), resultado.getElementos().get(0).getId());
 
         // Mas reciente / reputacion minima (el autor tiene reputacion 0, asi que 1+ no devuelve nada)
-        assertEquals(3, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, 0, 0, null, 0, OrdenPublicacion.MAS_RECIENTE), 0, 10).getTotalElementos());
-        assertEquals(0, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, 0, 0, null, 1, OrdenPublicacion.REPUTACION), 0, 10).getTotalElementos());
+        assertEquals(3, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, null, null, null, null, OrdenPublicacion.MAS_RECIENTE), 0, 10).getTotalElementos());
+        assertEquals(0, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, null, null, null, 1.0, OrdenPublicacion.REPUTACION), 0, 10).getTotalElementos());
 
         // Habilidad
         Habilidad habilidad = new Habilidad("Musica-" + UUID.randomUUID());
@@ -220,7 +227,7 @@ class PersistenciaTest {
         Publicacion conHabilidad = publicaciones.buscarPorId(barata.getId()).orElseThrow();
         conHabilidad.getHabilidades().add(habilidad);
         publicaciones.guardar(conHabilidad);
-        Pagina<Publicacion> porHabilidad = publicaciones.buscar(new FiltrosBusqueda(null, null, null, 0, 0, habilidad.getId(), 0, null), 0, 10);
+        Pagina<Publicacion> porHabilidad = publicaciones.buscar(new FiltrosBusqueda(null, null, null, null, null, habilidad.getId(), null, null), 0, 10);
         assertEquals(1, porHabilidad.getTotalElementos());
 
         // Consultas por autor y candidatas
@@ -420,11 +427,11 @@ class PersistenciaTest {
     @Test
     void notificacionesSeListanPorDestinatario() {
         String destinatario = nuevoUserId();
-        Notificacion notificacion = new Notificacion(destinatario, "Titulo", "Detalle", "SOLICITUD_RECIBIDA");
+        Notificacion notificacion = new Notificacion(destinatario, TipoEvento.SOLICITUD_RECIBIDA, "Titulo", "Detalle");
         notificaciones.guardar(notificacion);
 
-        assertEquals(1, notificaciones.listar(destinatario).size());
-        assertTrue(notificaciones.listar("otro").isEmpty());
+        assertEquals(1, notificaciones.listar(destinatario, 0, 20).getElementos().size());
+        assertTrue(notificaciones.listar("otro", 0, 20).getElementos().isEmpty());
         Notificacion leida = notificaciones.buscarPorId(notificacion.getId()).orElseThrow();
         assertFalse(leida.isLeida());
         assertEquals("Titulo", leida.getTitulo());
@@ -435,15 +442,198 @@ class PersistenciaTest {
         String destinatario = nuevoUserId();
 
         assertThrows(IllegalStateException.class, () -> unidad.ejecutar(() -> {
-            notificaciones.guardar(new Notificacion(destinatario, "t", "d", "x"));
+            notificaciones.guardar(new Notificacion(destinatario, TipoEvento.ACEPTACION, "t", "d"));
             throw new IllegalStateException("falla a mitad de la operacion");
         }));
-        assertTrue(notificaciones.listar(destinatario).isEmpty());
+        assertTrue(notificaciones.listar(destinatario, 0, 20).getElementos().isEmpty());
 
         unidad.ejecutar(() -> {
-            notificaciones.guardar(new Notificacion(destinatario, "t1", "d", "x"));
-            notificaciones.guardar(new Notificacion(destinatario, "t2", "d", "x"));
+            notificaciones.guardar(new Notificacion(destinatario, TipoEvento.ACEPTACION, "t1", "d"));
+            notificaciones.guardar(new Notificacion(destinatario, TipoEvento.ACEPTACION, "t2", "d"));
         });
-        assertEquals(2, notificaciones.listar(destinatario).size());
+        assertEquals(2, notificaciones.listar(destinatario, 0, 20).getElementos().size());
+    }
+
+    // ---------- 4.6: eventos y transacciones (integracion con H2) ----------
+
+    private PublicadorEventosEnMemoria publicadorConNotificaciones() {
+        PublicadorEventosEnMemoria publicador = new PublicadorEventosEnMemoria();
+        NotificacionService servicio = new NotificacionService(notificaciones, perfiles,
+                List.of(new CanalInterno(notificaciones)));
+        publicador.suscribir(new NotificacionesObserver(servicio));
+        return publicador;
+    }
+
+    private static EventoDominio aceptacionPara(String destinatario) {
+        return new EventoDominio(TipoEvento.ACEPTACION, UUID.randomUUID(), "proveedor-" + UUID.randomUUID(),
+                Set.of(destinatario));
+    }
+
+    @Test
+    void laNotificacionSeGuardaRecienDespuesDelCommit() {
+        String destinatario = nuevoUserId();
+        PublicadorEventosEnMemoria publicador = publicadorConNotificaciones();
+
+        unidad.ejecutar(() -> {
+            publicador.publicarDespuesDelCommit(aceptacionPara(destinatario));
+            assertTrue(notificaciones.listar(destinatario, 0, 20).getElementos().isEmpty());
+        });
+
+        List<Notificacion> guardadas = notificaciones.listar(destinatario, 0, 20).getElementos();
+        assertEquals(1, guardadas.size());
+        assertEquals("Tu solicitud fue aceptada", guardadas.get(0).getTitulo());
+    }
+
+    @Test
+    void noSeNotificaUnaOperacionQueHizoRollback() {
+        String destinatario = nuevoUserId();
+        PublicadorEventosEnMemoria publicador = publicadorConNotificaciones();
+
+        assertThrows(IllegalStateException.class, () -> unidad.ejecutar(() -> {
+            publicador.publicarDespuesDelCommit(aceptacionPara(destinatario));
+            throw new IllegalStateException("falla despues de publicar");
+        }));
+
+        assertTrue(notificaciones.listar(destinatario, 0, 20).getElementos().isEmpty());
+    }
+
+    @Test
+    void enUnaTransaccionAnidadaElAvisoEsperaAlCommitDeLaExterna() {
+        String destinatario = nuevoUserId();
+        PublicadorEventosEnMemoria publicador = publicadorConNotificaciones();
+
+        unidad.ejecutar(() -> {
+            unidad.ejecutar(() -> publicador.publicarDespuesDelCommit(aceptacionPara(destinatario)));
+            assertTrue(notificaciones.listar(destinatario, 0, 20).getElementos().isEmpty());
+        });
+
+        assertEquals(1, notificaciones.listar(destinatario, 0, 20).getElementos().size());
+    }
+
+    @Test
+    void unErrorAlNotificarNoDeshaceLaOperacionConfirmada() {
+        String destinatario = nuevoUserId();
+        PublicadorEventosEnMemoria publicador = publicadorConNotificaciones();
+        publicador.suscribir(evento -> {
+            throw new IllegalStateException("observador roto");
+        });
+        Notificacion datoDelCasoDeUso = new Notificacion(destinatario, TipoEvento.ACEPTACION, "Dato del caso de uso", "d");
+
+        unidad.ejecutar(() -> {
+            notificaciones.guardar(datoDelCasoDeUso);
+            publicador.publicarDespuesDelCommit(aceptacionPara(destinatario));
+        });
+
+        assertEquals(2, notificaciones.listar(destinatario, 0, 20).getElementos().size());
+    }
+
+    @Test
+    void marcarLeidaQuedaGuardadoEnLaBase() {
+        String destinatario = nuevoUserId();
+        Notificacion notificacion = new Notificacion(destinatario, TipoEvento.ACEPTACION, "t", "d");
+        notificaciones.guardar(notificacion);
+        NotificacionService servicio = new NotificacionService(notificaciones, perfiles,
+                List.of(new CanalInterno(notificaciones)));
+
+        servicio.marcarLeida(destinatario, notificacion.getId());
+
+        assertTrue(notificaciones.buscarPorId(notificacion.getId()).orElseThrow().isLeida());
+    }
+
+    @Test
+    void unDesafioDeOrganizacionSePuedeGuardarYRecuperar() {
+        // Arrange: organización real, con un representante autorizado
+        String representante = "representante-" + UUID.randomUUID();
+
+        Organizacion organizacion = new Organizacion(
+                "Empresa de prueba", representante
+        );
+        persistir(organizacion);
+
+        Categoria categoria = nuevaCategoria();
+
+        PublicacionService servicio = new PublicacionService(
+                publicaciones,
+                perfiles,
+                new JpaOrganizacionRepository()
+        );
+
+        DatosPublicacionDTO datos = new DatosPublicacionDTO(
+                "Desafío Java",
+                "Desarrollar una aplicación",
+                categoria.getId(),
+                Modalidad.REMOTA,
+                60,
+                1,
+                new SkillCoins(100),
+                Set.of("Java"),
+                TipoPublicacion.DESAFIO,
+                organizacion.getId()
+        );
+
+        // Act: crear usando el caso de uso real
+        Publicacion creada = servicio.crearBorrador(
+                representante, datos
+        );
+
+        // Assert: verificar que quedó guardada
+        Publicacion recuperada = publicaciones
+                .buscarPorId(creada.getId())
+                .orElseThrow();
+
+        assertEquals(TipoPublicacion.DESAFIO, recuperada.getTipo());
+        assertEquals(organizacion.getId(), recuperada.getAutorId());
+        assertEquals(organizacion.getId(),
+                recuperada.getOrganizacion().getId());
+    }
+
+
+    /* Opcion B: en un desafio autor_id queda vacio y el autor esta en organizacion_id. */
+    @Test
+    void unDesafioGuardadoDejaVaciaLaColumnaDelPerfilAutorYUsaLaDeLaOrganizacion() {
+        Organizacion organizacion = new Organizacion("Org " + UUID.randomUUID(), nuevoUserId());
+        persistir(organizacion);
+        Publicacion desafio = Publicacion.crearDesafio(organizacion, "Hackaton", "desc", nuevaCategoria(),
+                Modalidad.REMOTA, new SkillCoins(0), 60, 3);
+        publicaciones.guardar(desafio);
+
+        long filas = JPAUtil.consultar(em -> ((Number) em.createNativeQuery(
+                        "SELECT COUNT(*) FROM publicaciones WHERE id = :id AND autor_id IS NULL AND organizacion_id = :org")
+                .setParameter("id", desafio.getId())
+                .setParameter("org", organizacion.getId())
+                .getSingleResult()).longValue());
+
+        assertEquals(1, filas);
+        assertEquals(organizacion.getId(), publicaciones.buscarPorId(desafio.getId()).orElseThrow().getAutorId());
+    }
+
+    /* Opcion B: la clave foranea de autor_id hacia perfiles vuelve a existir. */
+    @Test
+    void unaOfertaConUnPerfilAutorInexistenteNoSePuedeGuardar() {
+        Publicacion huerfana = new Publicacion(UUID.randomUUID(), TipoPublicacion.MENTORIA, "Sin autor", "desc",
+                nuevaCategoria(), Modalidad.REMOTA, new SkillCoins(10), 60, 3);
+
+        assertThrows(RuntimeException.class, () -> publicaciones.guardar(huerfana));
+        assertTrue(publicaciones.buscarPorId(huerfana.getId()).isEmpty());
+    }
+
+    /* Un desafio guardado aparece en la busqueda, tambien en el orden por defecto (relevancia), y va despues de las ofertas. */
+    @Test
+    void unDesafioGuardadoApareceEnLaBusquedaOrdenadaPorRelevancia() {
+        Categoria categoria = nuevaCategoria();
+        Publicacion oferta = nuevaPublicacion(nuevoPerfil(), categoria, "Oferta", Modalidad.REMOTA, 50);
+        publicar(oferta);
+        Organizacion organizacion = new Organizacion("Org " + UUID.randomUUID(), nuevoUserId());
+        persistir(organizacion);
+        Publicacion desafio = Publicacion.crearDesafio(organizacion, "Desafio", "desc", categoria,
+                Modalidad.REMOTA, new SkillCoins(70), 60, 3);
+        publicaciones.guardar(desafio);
+        publicar(desafio);
+
+        Pagina<Publicacion> pagina = publicaciones.buscar(
+                new FiltrosBusqueda(null, categoria.getId(), null, null, null, null, null, OrdenPublicacion.RELEVANCIA), 0, 20);
+        assertEquals(List.of(oferta.getId(), desafio.getId()),
+                pagina.getElementos().stream().map(Publicacion::getId).toList());
+        assertEquals(2, pagina.getTotalElementos());
     }
 }

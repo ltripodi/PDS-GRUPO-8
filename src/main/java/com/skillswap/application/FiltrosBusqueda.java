@@ -2,31 +2,44 @@ package com.skillswap.application;
 
 import com.skillswap.domain.Modalidad;
 import com.skillswap.domain.OrdenPublicacion;
-import jakarta.persistence.Id;
 
 import java.util.UUID;
 
-/** DTO. */
+/*
+ * Criterios de busqueda de publicaciones. Todo filtro es opcional: null significa "no filtrar".
+ * Sin orden explicito se ordena por relevancia.
+ */
 public class FiltrosBusqueda {
-    private String texto;
-    private UUID categoriaId;
-    private Modalidad modalidad;
-    private int precioMinimo;
-    private int precioMaximo;
-    private UUID habilidadId;
-    private double reputacionMinima;
-    private OrdenPublicacion orden;
 
-    public FiltrosBusqueda(String texto, UUID categoriaId, Modalidad modalidad, int precioMinimo, int precioMaximo,
-                           UUID habilidadId, double reputacionMinima, OrdenPublicacion orden) {
-        this.texto = texto;
+    private final String texto;
+    private final UUID categoriaId;
+    private final Modalidad modalidad;
+    private final Integer precioMinimo;
+    private final Integer precioMaximo;
+    private final UUID habilidadId;
+    private final Double reputacionMinima;
+    private final OrdenPublicacion orden;
+
+    public FiltrosBusqueda(String texto, UUID categoriaId, Modalidad modalidad, Integer precioMinimo,
+                           Integer precioMaximo, UUID habilidadId, Double reputacionMinima,
+                           OrdenPublicacion orden) {
+        if ((precioMinimo != null && precioMinimo < 0) || (precioMaximo != null && precioMaximo < 0)) {
+            throw new IllegalArgumentException("Los precios no pueden ser negativos");
+        }
+        if (precioMinimo != null && precioMaximo != null && precioMinimo > precioMaximo) {
+            throw new IllegalArgumentException("El precio minimo no puede superar al maximo");
+        }
+        if (reputacionMinima != null && (!Double.isFinite(reputacionMinima) || reputacionMinima < 0)) {
+            throw new IllegalArgumentException("La reputacion minima debe ser un numero no negativo");
+        }
+        this.texto = texto == null || texto.isBlank() ? null : texto.trim();
         this.categoriaId = categoriaId;
         this.modalidad = modalidad;
         this.precioMinimo = precioMinimo;
         this.precioMaximo = precioMaximo;
         this.habilidadId = habilidadId;
         this.reputacionMinima = reputacionMinima;
-        this.orden = orden;
+        this.orden = orden == null ? OrdenPublicacion.RELEVANCIA : orden;
     }
 
     public String getTexto() {
@@ -41,11 +54,11 @@ public class FiltrosBusqueda {
         return modalidad;
     }
 
-    public int getPrecioMinimo() {
+    public Integer getPrecioMinimo() {
         return precioMinimo;
     }
 
-    public int getPrecioMaximo() {
+    public Integer getPrecioMaximo() {
         return precioMaximo;
     }
 
@@ -53,7 +66,7 @@ public class FiltrosBusqueda {
         return habilidadId;
     }
 
-    public double getReputacionMinima() {
+    public Double getReputacionMinima() {
         return reputacionMinima;
     }
 

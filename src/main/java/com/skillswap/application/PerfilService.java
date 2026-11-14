@@ -17,15 +17,20 @@ public class PerfilService {
     private final CalificacionRepository calificaciones;
     private final PublicacionRepository publicaciones;
     private final ContratacionRepository contrataciones;
+    private final UnidadTransaccional transacciones;
 
     public PerfilService(PerfilRepository perfilRepository, HabilidadRepository habilidades,
                          CalificacionRepository calificaciones, PublicacionRepository publicaciones,
-                         ContratacionRepository contrataciones) {
+                         ContratacionRepository contrataciones, UnidadTransaccional transacciones) {
+        if (transacciones == null) {
+            throw new IllegalArgumentException("La unidad transaccional es obligatoria");
+        }
         this.perfilRepository = perfilRepository;
         this.habilidades = habilidades;
         this.calificaciones = calificaciones;
         this.publicaciones = publicaciones;
         this.contrataciones = contrataciones;
+        this.transacciones = transacciones;
     }
 
     public PerfilPublicoDTO verPerfil(String userId) {
@@ -75,9 +80,15 @@ public class PerfilService {
     }
 
     public void darDeBaja(String userId) {
-        Perfil perfil = obtenerPerfil(userId);
-        perfil.darDeBaja();
-        perfilRepository.guardar(perfil);
+        transacciones.ejecutar(() -> {
+            Perfil perfil = obtenerPerfil(userId);
+            for (Publicacion publicacion : publicaciones.buscarActivasPorAutor(perfil.getUserId())) {
+                publicacion.pausar(perfil.getUserId());
+                publicaciones.guardar(publicacion);
+            }
+            perfil.darDeBaja();
+            perfilRepository.guardar(perfil);
+        });
     }
 
     public void recalcularReputacion(String userId) {

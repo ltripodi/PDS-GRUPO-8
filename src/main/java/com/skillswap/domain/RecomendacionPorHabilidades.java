@@ -4,14 +4,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/*
+ * Strategy Pattern - Concrete Strategy
+ * Puntaje: cantidad de habilidades que la publicacion comparte con el perfil.
+ */
 public class RecomendacionPorHabilidades implements EstrategiaRecomendacion {
-    @Override
-    public List<Publicacion> recomendar(Perfil perfil, List<Publicacion> candidatas, Map<UUID, Integer> solicitudesRecientes) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
-    }
 
     @Override
     public TipoRecomendacion tipo() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return TipoRecomendacion.HABILIDADES;
+    }
+
+    @Override
+    public List<Publicacion> recomendar(Perfil perfil, List<Publicacion> candidatas,
+                                        Map<UUID, Integer> solicitudesRecientes) {
+        if (perfil == null || candidatas == null) {
+            throw new IllegalArgumentException("El perfil y las candidatas son obligatorios");
+        }
+        return EstrategiaRecomendacion.ordenarPorPuntaje(candidatas,
+                publicacion -> habilidadesEnComun(perfil, publicacion));
+    }
+
+    private int habilidadesEnComun(Perfil perfil, Publicacion publicacion) {
+        return (int) publicacion.getHabilidades().stream()
+                .filter(perfil.getHabilidades()::contains)
+                .count();
     }
 }

@@ -6,14 +6,13 @@
     Por eso las clases de com.skillswap.domain no tienen anotaciones de persistencia:
     todo el mapeo vive en este archivo, fuera del dominio.
 
-    Se usa el esquema extendido de Hibernate (mapping-3.1.0, incluido en hibernate-core)
-    solo para fetch-mode="SUBSELECT": evita el N+1 y la MultipleBagFetchException al cargar
-    entidades con mas de una lista EAGER (Publicacion, Contratacion, Perfil).
-    El resto es JPA estandar.
+    Es JPA estandar (orm 3.1). Para evitar N+1 al cargar las colecciones EAGER se usa
+    hibernate.default_batch_fetch_size en persistence.xml: las colecciones de varios
+    registros se traen en pocas consultas agrupadas.
 -->
-<entity-mappings xmlns="http://www.hibernate.org/xsd/orm/mapping"
+<entity-mappings xmlns="https://jakarta.ee/xml/ns/persistence/orm"
                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                 xsi:schemaLocation="http://www.hibernate.org/xsd/orm/mapping https://hibernate.org/xsd/orm/mapping/mapping-3.1.0.xsd"
+                 xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence/orm https://jakarta.ee/xml/ns/persistence/orm/orm_3_1.xsd"
                  version="3.1">
 
     <package>com.skillswap.domain</package>
@@ -49,7 +48,7 @@
                     <join-column name="perfil_id"/>
                 </collection-table>
             </element-collection>
-            <element-collection name="disponibilidad" fetch="EAGER" fetch-mode="SUBSELECT">
+            <element-collection name="disponibilidad" fetch="EAGER">
                 <collection-table name="perfil_disponibilidad">
                     <join-column name="perfil_id"/>
                 </collection-table>
@@ -121,8 +120,9 @@
         <table name="publicaciones"/>
         <attributes>
             <id name="id"/>
+            <!-- Oferta: id del Perfil autor. Desafio: null (el autor es organizacion_id). -->
             <basic name="autorId">
-                <column name="autor_id" nullable="false"/>
+                <column name="autor_id"/>
             </basic>
             <basic name="tipo">
                 <column nullable="false"/>
@@ -157,7 +157,7 @@
             <many-to-one name="organizacion" fetch="EAGER">
                 <join-column name="organizacion_id"/>
             </many-to-one>
-            <one-to-many name="franjas" fetch="EAGER" fetch-mode="SUBSELECT" orphan-removal="true">
+            <one-to-many name="franjas" fetch="EAGER" orphan-removal="true">
                 <join-column name="publicacion_id" nullable="false"/>
                 <cascade>
                     <cascade-all/>
@@ -175,7 +175,7 @@
                     <join-column name="publicacion_id"/>
                 </collection-table>
             </element-collection>
-            <element-collection name="historial" fetch="EAGER" fetch-mode="SUBSELECT">
+            <element-collection name="historial" fetch="EAGER">
                 <collection-table name="publicacion_historial">
                     <join-column name="publicacion_id"/>
                 </collection-table>
@@ -290,7 +290,7 @@
             <basic name="estado">
                 <column nullable="false"/>
             </basic>
-            <one-to-many name="propuestas" fetch="EAGER" fetch-mode="SUBSELECT" orphan-removal="true">
+            <one-to-many name="propuestas" fetch="EAGER" orphan-removal="true">
                 <join-column name="contratacion_id" insertable="false" updatable="false"/>
                 <cascade>
                     <cascade-all/>
@@ -309,7 +309,7 @@
                     <cascade-all/>
                 </cascade>
             </one-to-one>
-            <element-collection name="historial" fetch="EAGER" fetch-mode="SUBSELECT">
+            <element-collection name="historial" fetch="EAGER">
                 <collection-table name="contratacion_historial">
                     <join-column name="contratacion_id"/>
                 </collection-table>
@@ -398,14 +398,27 @@
     <!-- ===================== Notificaciones (4.6) ===================== -->
 
     <entity class="Notificacion">
-        <table name="notificaciones"/>
+        <!-- La bandeja se consulta por destinatario, de la mas reciente a la mas vieja. -->
+        <table name="notificaciones">
+            <index name="idx_notificaciones_destinatario_fecha" column-list="destinatario_id, fecha"/>
+        </table>
         <attributes>
             <id name="id"/>
             <basic name="destinatarioId">
                 <column name="destinatario_id" nullable="false"/>
             </basic>
+            <basic name="tipo">
+                <column nullable="false"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="titulo">
+                <column nullable="false"/>
+            </basic>
             <basic name="detalle">
                 <column length="1000"/>
+            </basic>
+            <basic name="fecha">
+                <column nullable="false"/>
             </basic>
         </attributes>
     </entity>
