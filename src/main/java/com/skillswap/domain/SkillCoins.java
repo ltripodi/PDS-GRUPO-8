@@ -1,9 +1,6 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.Embeddable;
-
 /** Value Object. */
-@Embeddable
 public class SkillCoins {
     private int valor;
 

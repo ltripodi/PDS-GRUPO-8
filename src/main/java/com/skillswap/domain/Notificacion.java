@@ -1,23 +1,13 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "notificaciones")
 public class Notificacion {
-    @Id
     private UUID id;
 
-    @Column(name = "destinatario_id", nullable = false)
     private String destinatarioId;
 
-    @Column(length = 1000)
     private String detalle;
 
     private boolean leida;

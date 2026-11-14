@@ -1,19 +1,5 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,43 +9,27 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-@Entity
-@Table(name = "perfiles")
 public class Perfil {
-    @Id
     private UUID id;
 
-    @Column(name = "user_id", nullable = false, unique = true)
     private String userId;
 
-    @Column(name = "nombre_visible", nullable = false)
     private String nombreVisible;
 
-    @Column(length = 1000)
     private String biografia;
 
-    @Column(name = "zona_horaria")
     private ZoneId zonaHoraria;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "perfil_habilidades", joinColumns = @JoinColumn(name = "perfil_id"), inverseJoinColumns = @JoinColumn(name = "habilidad_id"))
     private Set<Habilidad> habilidades;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "perfil_intereses", joinColumns = @JoinColumn(name = "perfil_id"))
-    @Column(name = "interes")
     private Set<String> intereses;
 
     private boolean activo;
 
     private double reputacion;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "perfil_disponibilidad", joinColumns = @JoinColumn(name = "perfil_id"))
-    @Fetch(FetchMode.SUBSELECT)
     private List<DisponibilidadPerfil> disponibilidad = new ArrayList<>();
 
-    @Embedded
     private PreferenciaNotificacion preferenciaNotificacion = new PreferenciaNotificacion(EnumSet.of(CanalNotificacion.INTERNA));
 
     protected Perfil() {

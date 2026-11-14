@@ -1,25 +1,5 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -27,75 +7,42 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-@Entity
-@Table(name = "publicaciones")
 public class Publicacion {
-    @Id
     private UUID id;
 
-    @Column(name = "autor_id", nullable = false)
     private UUID autorId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private TipoPublicacion tipo;
 
-    @Column(nullable = false)
     private String titulo;
 
-    @Column(length = 2000)
     private String descripcion;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private Modalidad modalidad;
 
-    @Embedded
-    @AttributeOverride(name = "valor", column = @Column(name = "precio_base"))
     private SkillCoins precioBase;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private EstadoPublicacion estado;
 
     private int cupo;
 
-    @Column(name = "duracion_minutos")
     private int duracionMinutos;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "publicacion_etiquetas", joinColumns = @JoinColumn(name = "publicacion_id"))
-    @Column(name = "etiqueta")
     private Set<String> etiquetas;
 
-    @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JoinColumn(name = "publicacion_id", nullable = false)
-    @Fetch(FetchMode.SUBSELECT)
     private List<FranjaHoraria> franjas = new ArrayList<>();
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "publicacion_habilidades", joinColumns = @JoinColumn(name = "publicacion_id"), inverseJoinColumns = @JoinColumn(name = "habilidad_id"))
     private Set<Habilidad> habilidades = new HashSet<>();
 
     /* Navegacion de solo lectura: la columna autor_id se escribe desde autorId. */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "autor_id", insertable = false, updatable = false)
     private Perfil perfil;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "organizacion_id")
     private Organizacion organizacion;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "publicacion_historial", joinColumns = @JoinColumn(name = "publicacion_id"))
-    @Fetch(FetchMode.SUBSELECT)
     private List<RegistroTransicion> historial = new ArrayList<>();
 
     protected Publicacion() {

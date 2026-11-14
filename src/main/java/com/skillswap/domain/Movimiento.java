@@ -1,26 +1,13 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "movimientos")
 public class Movimiento {
-    @Id
     private UUID id;
 
-    @Column(name = "titular_id", nullable = false)
     private String titularId;
 
-    @Embedded
-    @AttributeOverride(name = "valor", column = @Column(name = "monto"))
     private SkillCoins monto;
 
     private String tipo;

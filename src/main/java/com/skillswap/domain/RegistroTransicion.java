@@ -1,12 +1,8 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.Embeddable;
-import jakarta.persistence.Id;
-
 import java.time.Instant;
 
 /** Inmutable. */
-@Embeddable
 public class RegistroTransicion {
     private Instant fecha;
     private String actorId;

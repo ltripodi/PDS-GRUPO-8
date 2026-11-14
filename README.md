@@ -14,6 +14,7 @@ El proyecto usa Maven y separa el código por capas dentro de `com.skillswap`:
 ## Base de datos
 
 - Persistencia con Hibernate/JPA sobre MySQL (`src/main/resources/META-INF/persistence.xml`, unidad `skillSwapPU`).
+- El mapeo objeto-relacional está en `src/main/resources/META-INF/orm.xml`, no en anotaciones: las clases de `domain` no conocen JPA (Clean Architecture). Si se agrega un atributo con columna especial, una relación o una entidad nueva, se mapea ahí.
 - La base `skillswap` se crea sola (`createDatabaseIfNotExist=true`) y las tablas se generan con `hbm2ddl.auto=update`.
 - Usuario/clave por defecto: `root` / `root`. Ajustarlos en `persistence.xml` si tu MySQL local usa otros.
 - `mvn test` corre los tests de persistencia contra H2 en memoria (no necesita MySQL).

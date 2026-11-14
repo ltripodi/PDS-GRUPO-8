@@ -1,39 +1,21 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "registro_estado_publicacion")
 public class RegistroEstadoPublicacion {
-    @Id
     private UUID id;
 
     private Instant fecha;
 
-    @Column(name = "actor_id")
     private UUID actorId;
 
-    @Enumerated(EnumType.STRING)
     private EstadoPublicacion origen;
 
-    @Enumerated(EnumType.STRING)
     private EstadoPublicacion destino;
 
     private String motivo;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "publicacion_id", nullable = false)
     private Publicacion publicacion;
 
     protected RegistroEstadoPublicacion() {

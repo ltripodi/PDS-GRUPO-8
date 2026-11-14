@@ -1,35 +1,18 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-
 import java.util.UUID;
 
-@Entity
-@Table(name = "calificaciones", uniqueConstraints = @UniqueConstraint(columnNames = {"contratacion_id", "calificador_id"}))
 public class Calificacion {
-    @Id
     private UUID id;
 
-    @Column(name = "contratacion_id", nullable = false)
     private UUID contratacionId;
 
-    @Column(name = "calificador_id", nullable = false)
     private String calificadorId;
 
-    @Column(name = "calificado_id", nullable = false)
     private String calificadoId;
 
     private int puntaje;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "contratacion_id", insertable = false, updatable = false)
     private Contratacion contratacion;
 
     protected Calificacion() {

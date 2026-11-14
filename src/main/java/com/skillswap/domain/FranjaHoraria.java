@@ -1,17 +1,9 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Version;
-
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "franjas_horarias")
 public class FranjaHoraria {
-    @Id
     private UUID id;
 
     private Instant inicio;
@@ -22,7 +14,6 @@ public class FranjaHoraria {
 
     private int ocupados;
 
-    @Version
     private long version;
 
     protected FranjaHoraria() {

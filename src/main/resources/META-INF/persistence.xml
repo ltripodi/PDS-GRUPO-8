@@ -9,6 +9,9 @@
 
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
+        <!-- El mapeo esta en orm.xml: el dominio no tiene anotaciones JPA (Clean Architecture, seccion 6). -->
+        <mapping-file>META-INF/orm.xml</mapping-file>
+
         <class>com.skillswap.domain.Habilidad</class>
         <class>com.skillswap.domain.Categoria</class>
         <class>com.skillswap.domain.Organizacion</class>
