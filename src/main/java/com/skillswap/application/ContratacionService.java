@@ -157,6 +157,35 @@ public class ContratacionService {
         });
     }
 
+    /* La otra parte (o quien propuso, para retirarla) descarta la propuesta pendiente. */
+    public void rechazarReprogramacion(String userId, UUID contratacionId) {
+        transacciones.ejecutar(() -> {
+            Contratacion contratacion = obtenerContratacion(contratacionId);
+            contratacion.rechazarReprogramacion(resolverActor(userId, contratacion));
+            contrataciones.guardar(contratacion);
+        });
+    }
+
+    /* Tabla 4.5: consultar historial (unica accion en RECHAZADA/CANCELADA). Solo para participantes. */
+    public List<RegistroHistorialDTO> consultarHistorial(String userId, UUID contratacionId) {
+        AtomicReference<List<RegistroHistorialDTO>> resultado = new AtomicReference<>();
+
+        transacciones.ejecutar(() -> {
+            Contratacion contratacion = obtenerContratacion(contratacionId);
+            resolverActor(userId, contratacion);
+            resultado.set(contratacion.getHistorial().stream()
+                    .map(registro -> new RegistroHistorialDTO(
+                            LocalDateTime.ofInstant(registro.getFecha(), ZoneId.systemDefault()),
+                            nombreDeActor(registro.getActorId()),
+                            registro.getOrigen(),
+                            registro.getDestino(),
+                            registro.getMotivo()))
+                    .collect(Collectors.toList()));
+        });
+
+        return resultado.get();
+    }
+
     /* Dentro de la transaccion para poder navegar relaciones LAZY al armar el DTO. */
     public List<ContratacionDTO> listar(String userId) {
         AtomicReference<List<ContratacionDTO>> resultado = new AtomicReference<>();
@@ -250,6 +279,15 @@ public class ContratacionService {
                 contratacion.getPrecio().getValor(),
                 EstadoContratacionDTO.valueOf(contratacion.getEstado())
         );
+    }
+
+    /* El historial guarda el id de Perfil/Organizacion como texto. */
+    private String nombreDeActor(String actorId) {
+        try {
+            return nombreDe(UUID.fromString(actorId));
+        } catch (IllegalArgumentException e) {
+            return actorId;
+        }
     }
 
     private String nombreDe(UUID parteId) {

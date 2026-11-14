@@ -20,6 +20,7 @@ import org.hibernate.annotations.FetchMode;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -211,6 +212,20 @@ public class Contratacion {
         registrarTransicion(actorId, estado, "Reprogramada a la franja " + nuevaFranja.getId());
     }
 
+    /*
+     * Reprogramacion: si una parte no acepta, la propuesta se descarta y la reserva queda igual.
+     * Sirve tanto para que la otra parte la rechace como para que quien la propuso la retire.
+     */
+    public void rechazarReprogramacion(UUID actorId) {
+        validarParticipante(actorId, "rechazar una reprogramacion de");
+
+        PropuestaReprogramacion propuesta = propuestaPendiente()
+                .orElseThrow(() -> new IllegalStateException("No hay una propuesta de reprogramacion pendiente"));
+        propuesta.rechazar();
+
+        registrarTransicion(actorId, estado, "Propuesta de reprogramacion rechazada");
+    }
+
     /* Package-private: solo los estados pueden cambiar el estado. */
     void cambiarEstado(EstadoContratacion nuevoEstado) {
         this.estadoActual = nuevoEstado;
@@ -258,7 +273,7 @@ public class Contratacion {
 
     private Optional<PropuestaReprogramacion> propuestaPendiente() {
         return propuestas.stream()
-                .filter(propuesta -> !propuesta.aceptadaPorAmbos())
+                .filter(PropuestaReprogramacion::estaPendiente)
                 .findFirst();
     }
 
@@ -313,7 +328,8 @@ public class Contratacion {
         return propuestas;
     }
 
+    /* Historial inmutable (seccion 5): solo registrarTransicion agrega entradas. */
     public List<RegistroTransicion> getHistorial() {
-        return historial;
+        return Collections.unmodifiableList(historial);
     }
 }

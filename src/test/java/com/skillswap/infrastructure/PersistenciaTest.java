@@ -34,15 +34,21 @@ import com.skillswap.domain.SkillCoins;
 import com.skillswap.domain.Solicitud;
 import com.skillswap.domain.TipoPublicacion;
 import jakarta.persistence.PersistenceException;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -67,10 +73,10 @@ class PersistenciaTest {
     private final PagoRepository pagos = new JpaPagoRepository();
     private final UnidadTransaccional unidad = new JpaUnidadTransaccional();
 
-    @AfterAll
-    static void cerrar() {
-        JPAUtil.close();
-    }
+    /*
+     * No se cierra JPAUtil al terminar: la EntityManagerFactory es estatica y la comparten
+     * todas las clases de test de la misma JVM. Cerrarla aca rompia las que corrian despues.
+     */
 
     // ---------- helpers ----------
 
@@ -234,15 +240,14 @@ class PersistenciaTest {
 
         Contratacion contratacion = new Contratacion(cliente.getId(), proveedor.getId(), new SkillCoins(40),
                 nuevaSolicitud(cliente, publicacion));
-        asignar(contratacion, "reserva", new Reserva(franja, 1));
+        contratacion.aceptar(proveedor.getId()); // crea la reserva y registra la transicion en el historial
         contratacion.getPropuestas().add(new PropuestaReprogramacion(contratacion.getId(), UUID.randomUUID()));
-        contratacion.getHistorial().add(new RegistroTransicion(cliente.getUserId(), "-", "PENDIENTE", "solicitud"));
         contrataciones.guardar(contratacion);
 
         Contratacion leida = contrataciones.buscarPorId(contratacion.getId()).orElseThrow();
 
-        assertEquals("PENDIENTE", leida.getEstado());
-        assertEquals("PENDIENTE", leida.getEstadoActual().nombre()); // State reconstruido por @PostLoad
+        assertEquals("ACEPTADA", leida.getEstado());
+        assertEquals("ACEPTADA", leida.getEstadoActual().nombre()); // State reconstruido por @PostLoad
         assertEquals(40, leida.getPrecio().getValor());
         assertEquals(publicacion.getId(), leida.getSolicitud().getPublicacion().getId());
         assertEquals(franja.getId(), leida.getReserva().getFranjaId());
@@ -250,11 +255,87 @@ class PersistenciaTest {
         assertEquals(1, leida.getPropuestas().size());
         assertEquals(leida.getId(), leida.getPropuestas().get(0).getContratacionId());
         assertEquals(1, leida.getHistorial().size());
+        assertEquals("ACEPTADA", leida.getHistorial().get(0).getDestino());
 
         // listarPorParticipante resuelve el userId contra cliente y proveedor
         assertEquals(1, contrataciones.listarPorParticipante(cliente.getUserId()).size());
         assertEquals(1, contrataciones.listarPorParticipante(proveedor.getUserId()).size());
         assertEquals(0, contrataciones.listarPorParticipante("otro-usuario").size());
+    }
+
+    /*
+     * Caso de aceptacion 15: dos aceptaciones simultaneas no pueden consumir el ultimo cupo.
+     * Ambas transacciones leen la franja con ocupados = 0; el @Version de FranjaHoraria
+     * hace fallar el commit de la segunda, que hace rollback completo.
+     */
+    @Test
+    void dosAceptacionesSimultaneasNoConsumenElUltimoCupo() throws Exception {
+        Perfil proveedor = nuevoPerfil();
+        Publicacion publicacion = new Publicacion(proveedor.getId(), TipoPublicacion.MENTORIA, "Ultimo cupo", "desc",
+                nuevaCategoria(), Modalidad.REMOTA, new SkillCoins(40), 60, 1);
+        Instant ahora = Instant.now();
+        FranjaHoraria franja = new FranjaHoraria(ahora.plus(1, ChronoUnit.DAYS), ahora.plus(2, ChronoUnit.DAYS), 1);
+        publicacion.getFranjas().add(franja);
+        publicaciones.guardar(publicacion);
+
+        Perfil clienteA = nuevoPerfil();
+        Perfil clienteB = nuevoPerfil();
+        Contratacion primera = new Contratacion(clienteA.getId(), proveedor.getId(), new SkillCoins(40),
+                new Solicitud(clienteA.getId(), publicacion, franja.getId(), "", "aprender"));
+        Contratacion segunda = new Contratacion(clienteB.getId(), proveedor.getId(), new SkillCoins(40),
+                new Solicitud(clienteB.getId(), publicacion, franja.getId(), "", "aprender"));
+        contrataciones.guardar(primera);
+        contrataciones.guardar(segunda);
+
+        CyclicBarrier ambasLeyeron = new CyclicBarrier(2);
+        ExecutorService hilos = Executors.newFixedThreadPool(2);
+        try {
+            Future<Throwable> a = hilos.submit(() -> aceptarEnTransaccion(primera.getId(), proveedor.getId(), ambasLeyeron));
+            Future<Throwable> b = hilos.submit(() -> aceptarEnTransaccion(segunda.getId(), proveedor.getId(), ambasLeyeron));
+            List<Throwable> resultados = new ArrayList<>(List.of(
+                    Optional.ofNullable(a.get(30, TimeUnit.SECONDS)).orElse(SIN_ERROR),
+                    Optional.ofNullable(b.get(30, TimeUnit.SECONDS)).orElse(SIN_ERROR)));
+
+            assertEquals(1, resultados.stream().filter(r -> r == SIN_ERROR).count(), "Solo una aceptacion debe confirmarse");
+            assertEquals(1, resultados.stream().filter(PersistenceException.class::isInstance).count(),
+                    "La otra debe fallar por optimistic locking");
+        } finally {
+            hilos.shutdownNow();
+        }
+
+        FranjaHoraria leida = publicaciones.buscarPorId(publicacion.getId()).orElseThrow().getFranjas().get(0);
+        assertEquals(1, leida.getOcupados());
+        long aceptadas = List.of(primera.getId(), segunda.getId()).stream()
+                .map(id -> contrataciones.buscarPorId(id).orElseThrow().getEstado())
+                .filter("ACEPTADA"::equals)
+                .count();
+        assertEquals(1, aceptadas, "La contratacion que fallo debe quedar PENDIENTE (rollback)");
+    }
+
+    private static final Throwable SIN_ERROR = new Throwable("sin error");
+
+    /* Devuelve null si confirmo, o la excepcion con la que fallo. */
+    private Throwable aceptarEnTransaccion(UUID contratacionId, UUID proveedorId, CyclicBarrier ambasLeyeron) {
+        try {
+            unidad.ejecutar(() -> {
+                Contratacion contratacion = contrataciones.buscarPorId(contratacionId).orElseThrow();
+                contratacion.getSolicitud().getPublicacion().getFranjas().size(); // lee la franja (version 0)
+                esperar(ambasLeyeron);
+                contratacion.aceptar(proveedorId);
+                contrataciones.guardar(contratacion);
+            });
+            return null;
+        } catch (RuntimeException e) {
+            return e;
+        }
+    }
+
+    private static void esperar(CyclicBarrier barrera) {
+        try {
+            barrera.await(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Test

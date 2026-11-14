@@ -26,7 +26,6 @@
         <class>com.skillswap.domain.Perfil</class>
         <class>com.skillswap.domain.Contratacion</class>
         <class>com.skillswap.domain.RegistroEstadoPublicacion</class>
-        <class>com.skillswap.domain.RegistroEstadoContratacion</class>
 
         <properties>
             <property name="jakarta.persistence.jdbc.driver"

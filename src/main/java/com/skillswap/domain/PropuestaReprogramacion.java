@@ -26,6 +26,9 @@ public class PropuestaReprogramacion {
     @Column(name = "aceptacion_proveedor")
     private boolean aceptacionProveedor;
 
+    @Column(name = "rechazada")
+    private boolean rechazada;
+
     protected PropuestaReprogramacion() {
     }
 
@@ -48,14 +51,31 @@ public class PropuestaReprogramacion {
         this.aceptacionProveedor = true;
     }
 
+    /* Una parte no acepta: la propuesta se cierra sin mover la reserva. */
+    public void rechazar() {
+        validarAbierta();
+        this.rechazada = true;
+    }
+
     public boolean aceptadaPorAmbos() {
         return aceptacionCliente && aceptacionProveedor;
     }
 
+    public boolean estaPendiente() {
+        return !rechazada && !aceptadaPorAmbos();
+    }
+
     private void validarAbierta() {
+        if (rechazada) {
+            throw new IllegalStateException("La propuesta de reprogramacion ya fue rechazada");
+        }
         if (aceptadaPorAmbos()) {
             throw new IllegalStateException("La propuesta de reprogramacion ya fue aceptada por ambas partes");
         }
+    }
+
+    public boolean isRechazada() {
+        return rechazada;
     }
 
     public UUID getId() {
