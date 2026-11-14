@@ -47,8 +47,9 @@
             <property name="hibernate.dialect"
                       value="org.hibernate.dialect.MySQLDialect"/>
 
+            <!-- El esquema lo crea Flyway (db/migration), no Hibernate. Ver MigracionesBaseDeDatos. -->
             <property name="hibernate.hbm2ddl.auto"
-                      value="update"/>
+                      value="none"/>
 
             <!-- Evita N+1: las colecciones de varias entidades se cargan en lotes (consigna, seccion 8). -->
             <property name="hibernate.default_batch_fetch_size"

@@ -3,6 +3,8 @@ package com.skillswap.infrastructure;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
+import org.hibernate.engine.config.spi.ConfigurationService;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,7 +56,20 @@ public class JPAUtil {
             }
         }
 
-        return Persistence.createEntityManagerFactory(PERSISTENCE_UNIT, overrides);
+        EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT, overrides);
+        try {
+            // Con hbm2ddl.auto=none Hibernate no toca las tablas: el esquema lo crea y actualiza Flyway.
+            // Se leen los ajustes reales de Hibernate: getProperties() devuelve usuario y clave enmascarados.
+            Map<String, Object> ajustes = factory.unwrap(SessionFactoryImplementor.class)
+                    .getServiceRegistry()
+                    .requireService(ConfigurationService.class)
+                    .getSettings();
+            MigracionesBaseDeDatos.aplicarSiCorresponde(ajustes);
+        } catch (RuntimeException e) {
+            factory.close();
+            throw e;
+        }
+        return factory;
     }
 
     public static EntityManager getEntityManager() {
