@@ -190,7 +190,7 @@ class PersistenciaTest {
         publicar(cara);
 
         // Solo las PUBLICADAS, ordenadas por menor precio, 2 por pagina
-        FiltrosBusqueda todas = new FiltrosBusqueda(null, categoria.getId(), null, 0, 0, null, 0, OrdenPublicacion.MENOR_PRECIO);
+        FiltrosBusqueda todas = new FiltrosBusqueda(null, categoria.getId(), null, null, null, null, null, OrdenPublicacion.MENOR_PRECIO);
         Pagina<Publicacion> primera = publicaciones.buscar(todas, 0, 2);
         Pagina<Publicacion> segunda = publicaciones.buscar(todas, 1, 2);
 
@@ -199,14 +199,14 @@ class PersistenciaTest {
         assertEquals(List.of(cara.getId()), segunda.getElementos().stream().map(Publicacion::getId).toList());
 
         // Texto + modalidad + rango de precio
-        FiltrosBusqueda guitarraPresencial = new FiltrosBusqueda("guitarra", categoria.getId(), Modalidad.PRESENCIAL, 20, 60, null, 0, null);
+        FiltrosBusqueda guitarraPresencial = new FiltrosBusqueda("guitarra", categoria.getId(), Modalidad.PRESENCIAL, 20, 60, null, null, null);
         Pagina<Publicacion> resultado = publicaciones.buscar(guitarraPresencial, 0, 10);
         assertEquals(1, resultado.getTotalElementos());
         assertEquals(media.getId(), resultado.getElementos().get(0).getId());
 
         // Mas reciente / reputacion minima (el autor tiene reputacion 0, asi que 1+ no devuelve nada)
-        assertEquals(3, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, 0, 0, null, 0, OrdenPublicacion.MAS_RECIENTE), 0, 10).getTotalElementos());
-        assertEquals(0, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, 0, 0, null, 1, OrdenPublicacion.REPUTACION), 0, 10).getTotalElementos());
+        assertEquals(3, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, null, null, null, null, OrdenPublicacion.MAS_RECIENTE), 0, 10).getTotalElementos());
+        assertEquals(0, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, null, null, null, 1.0, OrdenPublicacion.REPUTACION), 0, 10).getTotalElementos());
 
         // Habilidad
         Habilidad habilidad = new Habilidad("Musica-" + UUID.randomUUID());
@@ -214,7 +214,7 @@ class PersistenciaTest {
         Publicacion conHabilidad = publicaciones.buscarPorId(barata.getId()).orElseThrow();
         conHabilidad.getHabilidades().add(habilidad);
         publicaciones.guardar(conHabilidad);
-        Pagina<Publicacion> porHabilidad = publicaciones.buscar(new FiltrosBusqueda(null, null, null, 0, 0, habilidad.getId(), 0, null), 0, 10);
+        Pagina<Publicacion> porHabilidad = publicaciones.buscar(new FiltrosBusqueda(null, null, null, null, null, habilidad.getId(), null, null), 0, 10);
         assertEquals(1, porHabilidad.getTotalElementos());
 
         // Consultas por autor y candidatas
