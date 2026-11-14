@@ -115,7 +115,6 @@ class PersistenciaTest {
                 categoria, modalidad, new SkillCoins(precio), 60, 3);
         Instant ahora = Instant.now();
         publicacion.getFranjas().add(new FranjaHoraria(ahora.plus(1, ChronoUnit.DAYS), ahora.plus(2, ChronoUnit.DAYS), 3));
-        publicacion.getHistorial().add(new RegistroTransicion(autor.getUserId(), "-", "BORRADOR", "alta"));
         publicaciones.guardar(publicacion);
         return publicacion;
     }
@@ -184,9 +183,20 @@ class PersistenciaTest {
         assertEquals(100, leida.getPrecioBase().getValor());
         assertEquals(categoria.getId(), leida.getCategoria().getId());
         assertEquals(1, leida.getFranjas().size());
-        assertEquals(1, leida.getHistorial().size());
-        assertEquals("BORRADOR", leida.getHistorial().get(0).getDestino());
+        assertTrue(leida.getHistorial().isEmpty(), "un borrador todavia no tiene transiciones");
         assertEquals(0, leida.getFranjas().get(0).getOcupados());
+
+        // La transicion la registra el dominio (historial inmutable) y se persiste con la publicacion.
+        leida.publicar(autor.getUserId());
+        publicaciones.guardar(leida);
+        Publicacion publicada = publicaciones.buscarPorId(publicacion.getId()).orElseThrow();
+        assertEquals(EstadoPublicacion.PUBLICADA, publicada.getEstado());
+        assertEquals(1, publicada.getHistorial().size());
+        assertEquals("BORRADOR", publicada.getHistorial().get(0).getOrigen());
+        assertEquals("PUBLICADA", publicada.getHistorial().get(0).getDestino());
+        assertEquals(autor.getUserId(), publicada.getHistorial().get(0).getActorId());
+        assertThrows(UnsupportedOperationException.class, () -> publicada.getHistorial().clear(),
+                "el historial no se puede modificar desde afuera");
     }
 
     @Test

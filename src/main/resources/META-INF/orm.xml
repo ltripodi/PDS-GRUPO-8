@@ -197,25 +197,6 @@
         </attributes>
     </entity>
 
-    <entity class="RegistroEstadoPublicacion">
-        <table name="registro_estado_publicacion"/>
-        <attributes>
-            <id name="id"/>
-            <basic name="actorId">
-                <column name="actor_id"/>
-            </basic>
-            <basic name="origen">
-                <enumerated>STRING</enumerated>
-            </basic>
-            <basic name="destino">
-                <enumerated>STRING</enumerated>
-            </basic>
-            <many-to-one name="publicacion" fetch="LAZY" optional="false">
-                <join-column name="publicacion_id" nullable="false"/>
-            </many-to-one>
-        </attributes>
-    </entity>
-
     <!-- ===================== Solicitud, reserva y contratacion (4.4 y 4.5) ===================== -->
 
     <entity class="Solicitud">

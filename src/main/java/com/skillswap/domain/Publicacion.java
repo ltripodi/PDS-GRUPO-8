@@ -2,6 +2,7 @@ package com.skillswap.domain;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -189,8 +190,9 @@ public class Publicacion {
         return organizacion;
     }
 
+    /* Historial inmutable (seccion 5): solo transicionar(...) agrega entradas. */
     public List<RegistroTransicion> getHistorial() {
-        return historial;
+        return Collections.unmodifiableList(historial);
     }
 
     public void editarDatos(String titulo, String descripcion, SkillCoins precio) {

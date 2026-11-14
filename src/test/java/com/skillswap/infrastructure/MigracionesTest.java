@@ -41,11 +41,12 @@ class MigracionesTest {
     }
 
     @Test
-    void lasMigracionesCreanUnEsquemaQueCoincideConElMapeoYCarganLaDemo() {
+    void lasMigracionesCreanUnEsquemaQueCoincideConElMapeoYCarganLaDemo() throws SQLException {
         String url = baseNueva();
 
         MigrateResult resultado = MigracionesBaseDeDatos.migrar(url, "sa", "");
-        assertEquals(2, resultado.migrationsExecuted);
+        assertEquals(3, resultado.migrationsExecuted, "V1 esquema, V2 datos demo, V3 limpieza");
+        assertFalse(existeTabla(url, "registro_estado_publicacion"), "V3 la elimina");
 
         EntityManagerFactory emf = validarMapeoContra(url);
         EntityManager em = emf.createEntityManager();

@@ -11,6 +11,7 @@ import java.util.Map;
  * Los scripts estan en src/main/resources/db/migration:
  *   V1__esquema_inicial.sql  -> todas las tablas, claves, indices y restricciones.
  *   V2__datos_demo.sql       -> datos de demostracion reproducibles para el entorno local.
+ *   V3__...                  -> cambios posteriores del esquema.
  *
  * Flyway guarda en la tabla flyway_schema_history que versiones ya aplico, asi que cada
  * script corre una sola vez por base. Para cambiar el esquema se agrega un V3__..., nunca
