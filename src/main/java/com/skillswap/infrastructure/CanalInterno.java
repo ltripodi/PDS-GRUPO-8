@@ -5,16 +5,31 @@ import com.skillswap.application.NotificacionRepository;
 import com.skillswap.domain.CanalNotificacion;
 import com.skillswap.domain.Notificacion;
 
+/*
+ * Canal de notificacion interna: "entregar" es guardar en la bandeja del usuario.
+ * Es el unico canal que persiste.
+ */
 public class CanalInterno implements CanalEnvio {
-    private NotificacionRepository repositorio;
+
+    private final NotificacionRepository repositorio;
+
+    public CanalInterno(NotificacionRepository repositorio) {
+        if (repositorio == null) {
+            throw new IllegalArgumentException("El repositorio de notificaciones es obligatorio");
+        }
+        this.repositorio = repositorio;
+    }
 
     @Override
     public void enviar(Notificacion notificacion) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (notificacion == null) {
+            throw new IllegalArgumentException("La notificacion es obligatoria");
+        }
+        repositorio.guardar(notificacion);
     }
 
     @Override
     public CanalNotificacion tipo() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return CanalNotificacion.INTERNA;
     }
 }

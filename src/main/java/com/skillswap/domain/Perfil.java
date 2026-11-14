@@ -121,6 +121,12 @@ public class Perfil {
         return preferenciaNotificacion;
     }
 
+    /* La preferencia es un value object: no se modifica, se reemplaza. */
+    public void cambiarCanalesNotificacion(Set<CanalNotificacion> canales) {
+        asegurarActivo();
+        this.preferenciaNotificacion = new PreferenciaNotificacion(canales);
+    }
+
     public void actualizarDatos(String nombre, String biografia, ZoneId zona) {
         asegurarActivo();
         this.nombreVisible = validarNombre(nombre);

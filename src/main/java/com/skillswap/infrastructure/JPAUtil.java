@@ -4,9 +4,13 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /*
  * Punto unico de acceso a JPA (igual que el JPAUtil del ejemplo del profe).
@@ -32,6 +36,9 @@ public class JPAUtil {
     private static final EntityManagerFactory ENTITY_MANAGER_FACTORY = crearFactory();
 
     private static final ThreadLocal<EntityManager> ACTUAL = new ThreadLocal<>();
+    /* Acciones que esperan el commit de la transaccion en curso (por ejemplo, avisar un evento). */
+    private static final ThreadLocal<List<Runnable>> PENDIENTES = new ThreadLocal<>();
+    private static final Logger LOG = Logger.getLogger(JPAUtil.class.getName());
 
     private JPAUtil() {
     }
@@ -87,6 +94,8 @@ public class JPAUtil {
 
         EntityManager em = getEntityManager();
         ACTUAL.set(em);
+        PENDIENTES.set(new ArrayList<>());
+        boolean confirmada = false;
 
         try {
             em.getTransaction().begin();
@@ -94,6 +103,7 @@ public class JPAUtil {
             R resultado = operacion.apply(em);
 
             em.getTransaction().commit();
+            confirmada = true;
 
             return resultado;
 
@@ -105,8 +115,44 @@ public class JPAUtil {
             throw ex;
 
         } finally {
+            List<Runnable> pendientes = PENDIENTES.get();
+            PENDIENTES.remove();
             ACTUAL.remove();
-            em.close();
+            try {
+                em.close();
+            } finally {
+                // Recien aca: sin transaccion en curso, cada accion puede abrir la suya para guardar.
+                if (confirmada) {
+                    ejecutarSinPropagar(pendientes);
+                }
+            }
+        }
+    }
+
+    /*
+     * Ejecuta la accion cuando se confirma la transaccion en curso; si hay rollback, la descarta.
+     * En una transaccion anidada espera al commit de la de afuera. Sin transaccion, la ejecuta ya.
+     */
+    public static void despuesDelCommit(Runnable accion) {
+        if (accion == null) {
+            throw new IllegalArgumentException("La accion es obligatoria");
+        }
+        List<Runnable> pendientes = PENDIENTES.get();
+        if (pendientes == null) {
+            accion.run();
+            return;
+        }
+        pendientes.add(accion);
+    }
+
+    /* La operacion ya se confirmo: un error aca se registra, pero no se informa como falla a quien la pidio. */
+    private static void ejecutarSinPropagar(List<Runnable> acciones) {
+        for (Runnable accion : acciones) {
+            try {
+                accion.run();
+            } catch (RuntimeException e) {
+                LOG.log(Level.WARNING, "Fallo una accion posterior al commit", e);
+            }
         }
     }
 
