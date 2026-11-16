@@ -119,9 +119,9 @@ class ReglasDeNegocioTest {
 
     @Test
     void elRepresentanteDeLaOrganizacionNoPuedeSolicitarSuPropioDesafio() {
-        Organizacion acme = new Organizacion("Acme", "uade-admin");
-        Perfil representante = new Perfil("uade-admin", "Admin de Acme", "", ZoneId.of("UTC"));
-        Publicacion desafio = Publicacion.crearDesafio(acme, "Prototipo", "desc", categoria, Modalidad.REMOTA,
+        Organizacion uade = new Organizacion("UADE", "uade-admin");
+        Perfil representante = new Perfil("uade-admin", "Admin de UADE", "", ZoneId.of("UTC"));
+        Publicacion desafio = Publicacion.crearDesafio(uade, "Prototipo", "desc", categoria, Modalidad.REMOTA,
                 new SkillCoins(100), 480, 3);
         Instant inicio = Instant.now().plus(5, ChronoUnit.DAYS);
         FranjaHoraria franjaDesafio = new FranjaHoraria(inicio, inicio.plus(8, ChronoUnit.HOURS), 3);

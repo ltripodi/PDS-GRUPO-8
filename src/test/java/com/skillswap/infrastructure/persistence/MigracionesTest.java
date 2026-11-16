@@ -35,8 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class MigracionesTest {
 
     private static final UUID ANA = UUID.fromString("03000000-0000-0000-0000-000000000001");
-    private static final UUID DESAFIO_ACME = UUID.fromString("05000000-0000-0000-0000-000000000006");
-    private static final UUID ACME = UUID.fromString("04000000-0000-0000-0000-000000000001");
+    private static final UUID DESAFIO_UADE = UUID.fromString("05000000-0000-0000-0000-000000000006");
+    private static final UUID UADE = UUID.fromString("04000000-0000-0000-0000-000000000001");
 
     private static String baseNueva() {
         return "jdbc:h2:mem:migracion_" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1";
@@ -47,8 +47,8 @@ class MigracionesTest {
         String url = baseNueva();
 
         MigrateResult resultado = MigracionesBaseDeDatos.migrar(url, "sa", "");
-        assertEquals(6, resultado.migrationsExecuted, "V1 esquema, V2 datos demo, V3 limpieza, "
-                + "V4 version de billeteras, V5 integridad y concurrencia, V6 usuario de la organizacion");
+        assertEquals(7, resultado.migrationsExecuted, "V1 esquema, V2 datos demo, V3 limpieza, "
+                + "V4 version de billeteras, V5 integridad y concurrencia, V6 usuario y V7 nombre de la organizacion");
         assertFalse(existeTabla(url, "registro_estado_publicacion"), "V3 la elimina");
 
         EntityManagerFactory emf = validarMapeoContra(url);
@@ -68,11 +68,12 @@ class MigracionesTest {
             assertTrue(ana.getPreferenciaNotificacion().permite(CanalNotificacion.EMAIL));
             assertEquals(0.0, ana.getReputacion(), "la reputacion solo sale de calificaciones");
 
-            Publicacion desafio = em.find(Publicacion.class, DESAFIO_ACME);
+            Publicacion desafio = em.find(Publicacion.class, DESAFIO_UADE);
             assertEquals(TipoPublicacion.DESAFIO, desafio.getTipo());
-            assertEquals(ACME, desafio.getAutorId());
+            assertEquals(UADE, desafio.getAutorId());
             assertEquals("PUBLICADA", desafio.getHistorial().get(0).getDestino());
-            // V6: la organizacion la representa uade-admin, tambien en el historial
+            // V6 y V7: la organizacion es UADE y la representa uade-admin, tambien en el historial
+            assertEquals("UADE", desafio.getOrganizacion().getNombre());
             assertEquals("uade-admin", desafio.getOrganizacion().getUserIdAutorizado());
             assertEquals("uade-admin", desafio.getHistorial().get(0).getActorId());
         } finally {

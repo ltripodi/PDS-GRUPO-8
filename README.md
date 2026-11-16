@@ -46,7 +46,7 @@ El proyecto usa Maven y organiza `com.skillswap` por capas. Dentro de cada capa,
    ```
 
    Desde el IDE: ejecutar `com.skillswap.SkillSwapApplication` con la opción de VM `-Dnet.bytebuddy.experimental=true`.
-4. Al arrancar, Flyway crea las tablas y carga los datos demo (V1 a V6). La primera vez tarda unos segundos.
+4. Al arrancar, Flyway crea las tablas y carga los datos demo (V1 a V7). La primera vez tarda unos segundos.
 5. Elegir un usuario demo en el selector de arriba a la derecha (es un login simulado, sin clave):
 
    | userId | Rol en la demo |
@@ -55,7 +55,7 @@ El proyecto usa Maven y organiza `com.skillswap` por capas. Dentro de cada capa,
    | `carla` | Fotógrafa y diseñadora UX. Proveedora de 2 publicaciones. |
    | `bruno` | Cliente con 1000 SkillCoins. |
    | `diego` | Cliente con 100 SkillCoins: no le alcanza para la mentoría de 150. |
-   | `uade-admin` | Representante de la organización Acme Software: publica desafíos y no tiene perfil. |
+   | `uade-admin` | Representante de la organización UADE: publica desafíos y no tiene perfil. |
 
 ### Demo guiada
 
@@ -95,7 +95,8 @@ DROP DATABASE skillswap;
     - CHECKs de saldo no negativo y de `ocupados <= cupo`.
     - Índices de las consultas frecuentes.
   - `V6__usuario_organizacion_uade.sql`: el representante de la organización pasa de `acme-admin` a `uade-admin`. Se hace con una migración nueva porque V2 ya está aplicada en las bases del grupo.
-- Flyway anota en la tabla `flyway_schema_history` qué versiones aplicó, así que cada script corre una sola vez. Para cambiar el esquema se agrega `V7__descripcion.sql`; nunca se edita un script ya aplicado.
+  - `V7__organizacion_uade.sql`: la organización pasa de Acme Software a UADE.
+- Flyway anota en la tabla `flyway_schema_history` qué versiones aplicó, así que cada script corre una sola vez. Para cambiar el esquema se agrega `V8__descripcion.sql`; nunca se edita un script ya aplicado.
 - **Si ya tenías la base creada por Hibernate** (antes de Flyway), borrala una vez para que Flyway la arme de cero: `DROP DATABASE skillswap;`
 - Para volver a los datos demo originales: borrá la base y volvé a arrancar.
 - Usuario/clave por defecto: `root` / `root`. Si tu MySQL local usa otros, pasalos con `-Djakarta.persistence.jdbc.user=...` y `-Djakarta.persistence.jdbc.password=...` (ver "Cómo ejecutar la aplicación").
