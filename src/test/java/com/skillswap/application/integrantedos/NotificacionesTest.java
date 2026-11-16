@@ -1,5 +1,6 @@
 package com.skillswap.application.integrantedos;
 
+import com.skillswap.application.ErrorAplicacion;
 import com.skillswap.application.CanalEnvio;
 import com.skillswap.application.NotificacionDTO;
 import com.skillswap.application.NotificacionService;
@@ -563,7 +564,7 @@ class NotificacionesTest {
             servicio.notificar(eventoEntreLasPartes(TipoEvento.ACEPTACION, PROVEEDOR));
             String idDelCliente = controller.listar(CLIENTE).getElementos().get(0).getId().toString();
 
-            assertThrows(SecurityException.class, () -> controller.marcarLeida(PROVEEDOR, idDelCliente));
+            assertThrows(ErrorAplicacion.class, () -> controller.marcarLeida(PROVEEDOR, idDelCliente));
             assertFalse(controller.listar(CLIENTE).getElementos().get(0).isLeida());
 
             controller.marcarLeida(CLIENTE, idDelCliente);
@@ -598,22 +599,22 @@ class NotificacionesTest {
             servicio.notificar(eventoEntreLasPartes(TipoEvento.ACEPTACION, PROVEEDOR));
             String id = controller.listar(CLIENTE).getElementos().get(0).getId().toString();
 
-            assertThrows(IllegalArgumentException.class, () -> controller.listar(" "));
-            assertThrows(IllegalArgumentException.class, () -> controller.listar(null));
-            assertThrows(IllegalArgumentException.class, () -> controller.marcarTodasLeidas(""));
-            assertThrows(IllegalArgumentException.class, () -> controller.marcarLeida(CLIENTE, "no-es-un-uuid"));
-            assertThrows(IllegalArgumentException.class, () -> controller.marcarLeida(CLIENTE, null));
-            assertThrows(IllegalArgumentException.class,
+            assertThrows(ErrorAplicacion.class, () -> controller.listar(" "));
+            assertThrows(ErrorAplicacion.class, () -> controller.listar(null));
+            assertThrows(ErrorAplicacion.class, () -> controller.marcarTodasLeidas(""));
+            assertThrows(ErrorAplicacion.class, () -> controller.marcarLeida(CLIENTE, "no-es-un-uuid"));
+            assertThrows(ErrorAplicacion.class, () -> controller.marcarLeida(CLIENTE, null));
+            assertThrows(ErrorAplicacion.class,
                     () -> controller.marcarLeida(CLIENTE, UUID.randomUUID().toString()));
-            assertThrows(IllegalArgumentException.class, () -> controller.marcarLeida(" ", id));
-            assertThrows(IllegalArgumentException.class, () -> controller.configurarCanales(CLIENTE, Set.of()));
-            assertThrows(IllegalArgumentException.class, () -> controller.configurarCanales(CLIENTE, null));
-            assertThrows(IllegalArgumentException.class,
+            assertThrows(ErrorAplicacion.class, () -> controller.marcarLeida(" ", id));
+            assertThrows(ErrorAplicacion.class, () -> controller.configurarCanales(CLIENTE, Set.of()));
+            assertThrows(ErrorAplicacion.class, () -> controller.configurarCanales(CLIENTE, null));
+            assertThrows(ErrorAplicacion.class,
                     () -> controller.configurarCanales(" ", Set.of(CanalNotificacion.EMAIL)));
-            assertThrows(IllegalArgumentException.class,
+            assertThrows(ErrorAplicacion.class,
                     () -> controller.configurarCanales("no-existe", Set.of(CanalNotificacion.EMAIL)));
-            assertThrows(IllegalArgumentException.class, () -> controller.listar(CLIENTE, -1, 2));
-            assertThrows(IllegalArgumentException.class, () -> controller.listar(CLIENTE, 0, 0));
+            assertThrows(ErrorAplicacion.class, () -> controller.listar(CLIENTE, -1, 2));
+            assertThrows(ErrorAplicacion.class, () -> controller.listar(CLIENTE, 0, 0));
         }
     }
 

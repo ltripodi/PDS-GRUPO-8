@@ -1,5 +1,6 @@
 package com.skillswap.infrastructure.integrantedos;
 
+import com.skillswap.application.ErrorAplicacion;
 import com.skillswap.application.ContratacionDTO;
 import com.skillswap.application.ContratacionService;
 import com.skillswap.application.DatosSolicitudDTO;
@@ -77,7 +78,7 @@ class NotificacionesIntegracionTest {
     /* El caso de uso de 4.4 sin modificar: solo se le inyecta el publicador real. Pagos no interviene. */
     private final ContratacionService contrataciones = new ContratacionService(new JpaContratacionRepository(),
             new JpaPublicacionRepository(), perfiles, new JpaOrganizacionRepository(), unidad, publicador,
-            new PagoService(), new PoliticaSinReintegro());
+            new PagoService(null, null, null, null, null, null, null, null), new PoliticaSinReintegro());
 
     NotificacionesIntegracionTest() {
         publicador.suscribir(new NotificacionesObserver(notificacionService));
@@ -183,7 +184,7 @@ class NotificacionesIntegracionTest {
 
         controller.marcarTodasLeidas(usuario);
         assertTrue(controller.listar(usuario).getElementos().stream().allMatch(NotificacionDTO::isLeida));
-        assertThrows(SecurityException.class, () -> controller.marcarLeida("otro-usuario", id.toString()));
+        assertThrows(ErrorAplicacion.class, () -> controller.marcarLeida("otro-usuario", id.toString()));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.skillswap.application;
 
+import com.skillswap.application.ErrorAplicacion;
 import com.skillswap.controllers.ContratacionController;
 import com.skillswap.domain.Categoria;
 import com.skillswap.domain.Contratacion;
@@ -262,7 +263,7 @@ class IntegranteTresTest {
         UUID id = controller.solicitar("cliente", publicacion.getId(), "Hola", franja.getId(), "Aprender");
         controller.rechazar("proveedor", id);
 
-        assertThrows(IllegalStateException.class, () -> controller.aceptar("proveedor", id));
+        assertThrows(ErrorAplicacion.class, () -> controller.aceptar("proveedor", id));
         List<RegistroHistorialDTO> historial = controller.consultarHistorial("cliente", id);
 
         assertEquals(1, historial.size());
@@ -270,7 +271,7 @@ class IntegranteTresTest {
         assertEquals("RECHAZADA", historial.get(0).getDestino());
         assertEquals("Proveedor", historial.get(0).getActor());
         assertEquals("Solicitud rechazada por el proveedor", historial.get(0).getMotivo());
-        assertThrows(SecurityException.class, () -> controller.consultarHistorial("intruso", id));
+        assertThrows(ErrorAplicacion.class, () -> controller.consultarHistorial("intruso", id));
     }
 
     @Test
@@ -313,8 +314,8 @@ class IntegranteTresTest {
         Escenario escenario = new Escenario(politicaFija(100));
         ContratacionController controller = new ContratacionController(escenario.servicio, escenario.pagos);
 
-        assertThrows(IllegalArgumentException.class, () -> controller.aceptar(" ", UUID.randomUUID()));
-        assertThrows(IllegalArgumentException.class, () -> controller.cancelar("cliente", UUID.randomUUID(), ""));
+        assertThrows(ErrorAplicacion.class, () -> controller.aceptar(" ", UUID.randomUUID()));
+        assertThrows(ErrorAplicacion.class, () -> controller.cancelar("cliente", UUID.randomUUID(), ""));
 
         UUID id = controller.solicitar("cliente", publicacion.getId(), "Hola", franja.getId(), "Aprender");
         Pagina<ContratacionDTO> pagina = controller.listarContratacionesPaginado("cliente", 0, 10);
@@ -346,6 +347,11 @@ class IntegranteTresTest {
 
     private static final class PagoServiceFalso extends PagoService {
         int reintegrado;
+
+        PagoServiceFalso() {
+            // PagoService ahora recibe sus dependencias; este doble no usa ninguna.
+            super(null, null, null, null, null, null, null, null);
+        }
 
         @Override
         public void realizarReintegro(UUID contratacionId, SkillCoins monto) {

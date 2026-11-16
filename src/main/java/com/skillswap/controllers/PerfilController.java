@@ -6,7 +6,7 @@ import com.skillswap.application.PerfilService;
 
 import java.util.UUID;
 
-public class PerfilController {
+public class PerfilController extends ControllerBase {
     private final PerfilService perfilService;
 
     public PerfilController(PerfilService perfilService) {
@@ -14,18 +14,18 @@ public class PerfilController {
     }
 
     public PerfilPublicoDTO verPerfil(String userId) {
-        return perfilService.verPerfil(userId);
+        return ejecutar(() -> perfilService.verPerfil(userId));
     }
 
     public UUID crearPerfil(String userId, DatosPerfilDTO datos) {
-        return perfilService.crearPerfil(userId, datos);
+        return ejecutar(() -> perfilService.crearPerfil(userId, datos));
     }
 
     public void actualizarPerfil(String userId, DatosPerfilDTO datos) {
-        perfilService.actualizarPerfil(userId, datos);
+        ejecutarAccion(() -> perfilService.actualizarPerfil(userId, datos));
     }
 
     public void darDeBaja(String userId) {
-        perfilService.darDeBaja(userId);
+        ejecutarAccion(() -> perfilService.darDeBaja(userId));
     }
 }

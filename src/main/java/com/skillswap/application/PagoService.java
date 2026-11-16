@@ -22,7 +22,9 @@ public class PagoService {
     private final PerfilRepository perfiles;
     private final OrganizacionRepository organizaciones;
     private final UnidadTransaccional transacciones;
-    private final CalculadorPrecio precio;   // reservado (UML); no se usa en pagar()
+    // Reservado (UML); no se usa en pagar(): el precio con promociones se fija al solicitar
+    // (ContratacionService.calcularPrecio) y pagar() cobra Contratacion.getPrecio().
+    private final CalculadorPrecio precio;
     private final PublicadorEventosPort eventos;
     private final PagoRepository pagos;
 
@@ -65,6 +67,14 @@ public class PagoService {
             // Defensa en profundidad: UNIQUE de Pago.contratacionId es la segunda capa.
             if (pagos.buscarPorContratacion(contratacionId).isPresent()) {
                 throw new IllegalStateException("La contratación ya tiene un pago registrado");
+            }
+
+            // Se valida el estado ANTES de mover saldos: asi un pago a una contratacion que no esta
+            // ACEPTADA no toca ningun saldo ni siquiera con una UnidadTransaccional sin rollback.
+            // confirmarPago (abajo) sigue siendo la regla autoritativa del State.
+            if (!"ACEPTADA".equals(contratacion.getEstado())) {
+                throw new IllegalStateException("Solo se puede pagar una contratacion ACEPTADA (estado actual: "
+                        + contratacion.getEstado() + ")");
             }
 
             SkillCoins monto = contratacion.getPrecio();
@@ -136,6 +146,14 @@ public class PagoService {
         String clienteUserId = perfiles.buscarPorId(contratacion.getClienteId())
                 .map(Perfil::getUserId)
                 .orElseThrow(() -> new IllegalStateException("No existe el Perfil del cliente"));
+
+        // El proveedor ya cobro en pagar(): el reintegro sale de su billetera. Si no, se crearian
+        // SkillCoins de la nada. Si el proveedor ya gasto ese saldo, debitar() falla con
+        // "Saldo insuficiente" y toda la cancelacion hace rollback (no se pierde ni se inventa dinero).
+        String proveedorUserId = resolverUserIdDelProveedor(contratacion.getProveedorId());
+        Billetera billeteraProveedor = obtenerOCrearBilletera(proveedorUserId);
+        billeteraProveedor.debitar(monto);
+        billeteras.guardar(billeteraProveedor);
 
         Billetera billetera = obtenerOCrearBilletera(clienteUserId);
         billetera.reintegrar(monto);

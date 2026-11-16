@@ -1,9 +1,13 @@
 package com.skillswap.infrastructure;
 
+import com.skillswap.application.ConflictoConcurrenciaException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.Persistence;
+import org.hibernate.StaleStateException;
 import org.hibernate.engine.config.spi.ConfigurationService;
+import org.hibernate.exception.ConstraintViolationException;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 
 import java.util.ArrayList;
@@ -127,7 +131,7 @@ public class JPAUtil {
                 em.getTransaction().rollback();
             }
 
-            throw ex;
+            throw traducir(ex);
 
         } finally {
             List<Runnable> pendientes = PENDIENTES.get();
@@ -142,6 +146,28 @@ public class JPAUtil {
                 }
             }
         }
+    }
+
+    /*
+     * Adaptador de errores: ninguna capa de arriba conoce las excepciones de JPA/Hibernate.
+     * Un choque de optimistic locking o una violacion de clave unica (doble pago, doble calificacion,
+     * perfil duplicado) sale como ConflictoConcurrenciaException; el resto de las excepciones pasa igual.
+     */
+    private static RuntimeException traducir(RuntimeException ex) {
+        for (Throwable causa = ex; causa != null; causa = causa.getCause() == causa ? null : causa.getCause()) {
+            if (causa instanceof ConflictoConcurrenciaException) {
+                return ex;
+            }
+            if (causa instanceof OptimisticLockException || causa instanceof StaleStateException) {
+                return new ConflictoConcurrenciaException(
+                        "La operacion choco con otra simultanea y se cancelo. Intente nuevamente.", ex);
+            }
+            if (causa instanceof ConstraintViolationException) {
+                return new ConflictoConcurrenciaException(
+                        "La operacion viola una restriccion de unicidad o integridad (por ejemplo, ya fue realizada).", ex);
+            }
+        }
+        return ex;
     }
 
     /*

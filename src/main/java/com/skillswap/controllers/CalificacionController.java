@@ -4,7 +4,7 @@ import com.skillswap.application.CalificacionService;
 
 import java.util.UUID;
 
-public class CalificacionController {
+public class CalificacionController extends ControllerBase {
     private final CalificacionService calificacionService;
 
     public CalificacionController(CalificacionService calificacionService) {
@@ -12,6 +12,6 @@ public class CalificacionController {
     }
 
     public void calificar(String userId, UUID contratacionId, String calificadoId, int puntaje) {
-        calificacionService.calificar(userId, contratacionId, calificadoId, puntaje);
+        ejecutarAccion(() -> calificacionService.calificar(userId, contratacionId, calificadoId, puntaje));
     }
 }

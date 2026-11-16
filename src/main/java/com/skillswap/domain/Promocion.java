@@ -11,6 +11,9 @@ public class Promocion {
     }
 
     public Promocion(SkillCoins descuento) {
+        if (descuento == null) {
+            throw new IllegalArgumentException("El descuento es obligatorio");
+        }
         this.id = UUID.randomUUID();
         this.descuento = descuento;
     }

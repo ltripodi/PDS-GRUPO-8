@@ -19,7 +19,8 @@ El proyecto usa Maven y separa el código por capas dentro de `com.skillswap`:
   - `V1__esquema_inicial.sql`: todas las tablas, claves e índices.
   - `V2__datos_demo.sql`: datos de demostración (usuarios `ana`, `carla`, `bruno`, `diego` y `acme-admin`; el detalle está en el encabezado del script).
   - `V3__eliminar_registro_estado_publicacion.sql`: borra una tabla que no se usaba (ejemplo de cómo se cambia el esquema sin tocar V1).
-- Flyway anota en la tabla `flyway_schema_history` qué versiones aplicó, así que cada script corre una sola vez. Para cambiar el esquema se agrega `V3__descripcion.sql`; nunca se edita un script ya aplicado.
+  - `V4__version_billeteras.sql`: agrega la columna `version` a `billeteras` (optimistic locking: dos pagos simultáneos no se pisan el saldo).
+- Flyway anota en la tabla `flyway_schema_history` qué versiones aplicó, así que cada script corre una sola vez. Para cambiar el esquema se agrega `V5__descripcion.sql`; nunca se edita un script ya aplicado.
 - **Si ya tenías la base creada por Hibernate** (antes de Flyway), borrala una vez para que Flyway la arme de cero: `DROP DATABASE skillswap;`
 - Para volver a los datos demo originales: borrá la base y volvé a arrancar.
 - Usuario/clave por defecto: `root` / `root`. Ajustarlos en `persistence.xml` si tu MySQL local usa otros.

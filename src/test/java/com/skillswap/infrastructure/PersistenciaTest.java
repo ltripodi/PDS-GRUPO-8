@@ -1,4 +1,5 @@
 package com.skillswap.infrastructure;
+import com.skillswap.application.ConflictoConcurrenciaException;
 import com.skillswap.application.DatosPublicacionDTO;
 import com.skillswap.application.PublicacionService;
 import com.skillswap.domain.Organizacion;
@@ -314,7 +315,7 @@ class PersistenciaTest {
                     Optional.ofNullable(b.get(30, TimeUnit.SECONDS)).orElse(SIN_ERROR)));
 
             assertEquals(1, resultados.stream().filter(r -> r == SIN_ERROR).count(), "Solo una aceptacion debe confirmarse");
-            assertEquals(1, resultados.stream().filter(PersistenceException.class::isInstance).count(),
+            assertEquals(1, resultados.stream().filter(ConflictoConcurrenciaException.class::isInstance).count(),
                     "La otra debe fallar por optimistic locking");
         } finally {
             hilos.shutdownNow();
@@ -420,7 +421,7 @@ class PersistenciaTest {
 
         assertTrue(calificaciones.existe(contratacion.getId(), cliente.getUserId()));
         assertFalse(calificaciones.existe(contratacion.getId(), proveedor.getUserId()));
-        assertThrows(PersistenceException.class,
+        assertThrows(ConflictoConcurrenciaException.class,
                 () -> calificaciones.guardar(new Calificacion(contratacion.getId(), cliente.getUserId(), proveedor.getUserId(), 4)));
 
         // Mientras la contratacion no este COMPLETADA la calificacion no es verificada

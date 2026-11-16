@@ -10,6 +10,9 @@ public class Billetera {
 
     private List<Movimiento> movimientos = new ArrayList<>();
 
+    /* Optimistic locking (mapeado en orm.xml): dos operaciones concurrentes sobre el mismo saldo no se pisan. */
+    private long version;
+
     protected Billetera() {
     }
 
@@ -24,6 +27,10 @@ public class Billetera {
 
     public SkillCoins getSaldo() {
         return saldo;
+    }
+
+    public long getVersion() {
+        return version;
     }
 
     public List<Movimiento> getMovimientos() {

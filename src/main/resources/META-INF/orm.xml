@@ -312,6 +312,8 @@
             <id name="titularId">
                 <column name="titular_id"/>
             </id>
+            <!-- Optimistic locking: dos pagos simultaneos no pueden pisarse el saldo. -->
+            <version name="version"/>
             <one-to-many name="movimientos" fetch="LAZY">
                 <join-column name="titular_id" insertable="false" updatable="false"/>
                 <cascade>

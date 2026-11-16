@@ -6,7 +6,7 @@ import com.skillswap.domain.Movimiento;
 
 import java.util.List;
 
-public class WalletController {
+public class WalletController extends ControllerBase {
 
     private final WalletService walletService;
 
@@ -15,18 +15,18 @@ public class WalletController {
     }
 
     public int consultarSaldo(String userId) {
-        return walletService.consultarSaldo(userId);
+        return ejecutar(() -> walletService.consultarSaldo(userId));
     }
 
     public List<Movimiento> listarMovimientos(String userId) {
-        return walletService.listarMovimientos(userId);
+        return ejecutar(() -> walletService.listarMovimientos(userId));
     }
 
     public int acreditarDemo(String userId, int importe) {
-        return walletService.acreditarDemo(userId, importe);
+        return ejecutar(() -> walletService.acreditarDemo(userId, importe));
     }
 
     public Pagina<Movimiento> listarMovimientosPaginado(String userId, int pagina, int tamanio) {
-        return walletService.listarMovimientosPaginado(userId, pagina, tamanio);
+        return ejecutar(() -> walletService.listarMovimientosPaginado(userId, pagina, tamanio));
     }
 }

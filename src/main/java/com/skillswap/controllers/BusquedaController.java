@@ -14,7 +14,7 @@ import java.util.List;
  * Controller de 4.3: valida la entrada y delega en los casos de uso.
  * Los listados se devuelven paginados; sin pagina explicita, la primera con el tamanio por defecto.
  */
-public class BusquedaController {
+public class BusquedaController extends ControllerBase {
 
     private static final int PRIMERA_PAGINA = 0;
     private static final int TAMANIO_POR_DEFECTO = 20;
@@ -33,10 +33,12 @@ public class BusquedaController {
     }
 
     public Pagina<PublicacionDTO> buscar(FiltrosBusqueda filtros, int pagina, int tamanio) {
-        if (filtros == null) {
-            throw new IllegalArgumentException("Los filtros de busqueda son obligatorios");
-        }
-        return busquedaService.buscar(filtros, pagina, tamanio);
+        return ejecutar(() -> {
+            if (filtros == null) {
+                throw new IllegalArgumentException("Los filtros de busqueda son obligatorios");
+            }
+            return busquedaService.buscar(filtros, pagina, tamanio);
+        });
     }
 
     public Pagina<PublicacionDTO> recomendar(String userId) {
@@ -44,16 +46,18 @@ public class BusquedaController {
     }
 
     public Pagina<PublicacionDTO> recomendar(String userId, TipoRecomendacion tipo, int pagina, int tamanio) {
-        if (userId == null || userId.isBlank()) {
-            throw new IllegalArgumentException("El userId es obligatorio");
-        }
-        if (tipo == null) {
-            throw new IllegalArgumentException("El tipo de recomendacion es obligatorio");
-        }
-        return recomendacionService.recomendar(userId, tipo, pagina, tamanio);
+        return ejecutar(() -> {
+            if (userId == null || userId.isBlank()) {
+                throw new IllegalArgumentException("El userId es obligatorio");
+            }
+            if (tipo == null) {
+                throw new IllegalArgumentException("El tipo de recomendacion es obligatorio");
+            }
+            return recomendacionService.recomendar(userId, tipo, pagina, tamanio);
+        });
     }
 
     public List<CategoriaDTO> listarCategorias() {
-        return busquedaService.listarCategorias();
+        return ejecutar(busquedaService::listarCategorias);
     }
 }

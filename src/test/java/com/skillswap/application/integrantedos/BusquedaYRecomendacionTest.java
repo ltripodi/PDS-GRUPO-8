@@ -1,5 +1,6 @@
 package com.skillswap.application.integrantedos;
 
+import com.skillswap.application.ErrorAplicacion;
 import com.skillswap.application.BusquedaService;
 import com.skillswap.application.CategoriaDTO;
 import com.skillswap.application.FiltrosBusqueda;
@@ -287,11 +288,11 @@ class BusquedaYRecomendacionTest {
         void validaLaEntrada() {
             BusquedaController controller = nuevoController();
 
-            assertThrows(IllegalArgumentException.class, () -> controller.buscar(null));
-            assertThrows(IllegalArgumentException.class, () -> controller.buscar(sinFiltros(), -1, 10));
-            assertThrows(IllegalArgumentException.class, () -> controller.buscar(sinFiltros(), 0, 0));
-            assertThrows(IllegalArgumentException.class, () -> controller.recomendar(" "));
-            assertThrows(IllegalArgumentException.class, () -> controller.recomendar("cliente", null, 0, 10));
+            assertThrows(ErrorAplicacion.class, () -> controller.buscar(null));
+            assertThrows(ErrorAplicacion.class, () -> controller.buscar(sinFiltros(), -1, 10));
+            assertThrows(ErrorAplicacion.class, () -> controller.buscar(sinFiltros(), 0, 0));
+            assertThrows(ErrorAplicacion.class, () -> controller.recomendar(" "));
+            assertThrows(ErrorAplicacion.class, () -> controller.recomendar("cliente", null, 0, 10));
         }
     }
 

@@ -1,11 +1,15 @@
 package com.skillswap.application;
 
+import com.skillswap.domain.CalculadorPrecio;
 import com.skillswap.domain.Contratacion;
 import com.skillswap.domain.EventoDominio;
 import com.skillswap.domain.FranjaHoraria;
 import com.skillswap.domain.Organizacion;
 import com.skillswap.domain.Perfil;
 import com.skillswap.domain.PoliticaCancelacion;
+import com.skillswap.domain.PrecioBase;
+import com.skillswap.domain.PrecioConPromocion;
+import com.skillswap.domain.Promocion;
 import com.skillswap.domain.Publicacion;
 import com.skillswap.domain.SkillCoins;
 import com.skillswap.domain.Solicitud;
@@ -36,11 +40,36 @@ public class ContratacionService {
     private final PublicadorEventosPort eventos;
     private final PagoService pagos;
     private final PoliticaCancelacion politicaCancelacion;
+    private final PromocionRepository promociones;
 
+    /* Sin promociones: el precio de la contratacion es el precio base de la publicacion. */
     public ContratacionService(ContratacionRepository contrataciones, PublicacionRepository publicaciones,
                                PerfilRepository perfiles, OrganizacionRepository organizaciones,
                                UnidadTransaccional transacciones, PublicadorEventosPort eventos,
                                PagoService pagos, PoliticaCancelacion politicaCancelacion) {
+        this(contrataciones, publicaciones, perfiles, organizaciones, transacciones, eventos, pagos,
+                politicaCancelacion, new PromocionRepository() {
+                    @Override
+                    public List<Promocion> listarVigentes() {
+                        return List.of();
+                    }
+
+                    @Override
+                    public void guardar(Promocion promocion) {
+                        throw new UnsupportedOperationException("Este servicio no administra promociones");
+                    }
+                });
+    }
+
+    public ContratacionService(ContratacionRepository contrataciones, PublicacionRepository publicaciones,
+                               PerfilRepository perfiles, OrganizacionRepository organizaciones,
+                               UnidadTransaccional transacciones, PublicadorEventosPort eventos,
+                               PagoService pagos, PoliticaCancelacion politicaCancelacion,
+                               PromocionRepository promociones) {
+        if (promociones == null) {
+            throw new IllegalArgumentException("El repositorio de promociones es obligatorio");
+        }
+        this.promociones = promociones;
         this.contrataciones = contrataciones;
         this.publicaciones = publicaciones;
         this.perfiles = perfiles;
@@ -66,7 +95,7 @@ public class ContratacionService {
                     datos.getMensaje(), datos.getObjetivo());
 
             Contratacion contratacion = new Contratacion(cliente.getId(), publicacion.getAutorId(),
-                    publicacion.getPrecioBase(), solicitud);
+                    calcularPrecio(publicacion.getPrecioBase()), solicitud);
             contrataciones.guardar(contratacion); // la solicitud se guarda en cascada
 
             publicar(TipoEvento.SOLICITUD_RECIBIDA, contratacion, userId);
@@ -74,6 +103,19 @@ public class ContratacionService {
         });
 
         return resultado.get();
+    }
+
+    /*
+     * Decorator (4.4 / regla 5): el precio base se envuelve con cada promocion vigente, en cadena.
+     * Las promociones son acumulables y el total nunca baja de cero (lo garantiza Promocion.aplicar).
+     * El precio queda fijado en la Contratacion: pagar() y el reintegro cobran ese monto.
+     */
+    private SkillCoins calcularPrecio(SkillCoins precioBase) {
+        CalculadorPrecio calculador = new PrecioBase(precioBase);
+        for (Promocion promocion : promociones.listarVigentes()) {
+            calculador = new PrecioConPromocion(calculador, promocion);
+        }
+        return calculador.total();
     }
 
     /* Estado + reserva + cupo en una transaccion; el @Version evita la sobreventa. */
