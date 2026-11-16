@@ -1,5 +1,17 @@
 package com.skillswap.domain;
 
+import com.skillswap.domain.calificacion.Calificacion;
+import com.skillswap.domain.compartido.SkillCoins;
+import com.skillswap.domain.contratacion.Contratacion;
+import com.skillswap.domain.contratacion.Solicitud;
+import com.skillswap.domain.perfil.Perfil;
+import com.skillswap.domain.publicacion.Categoria;
+import com.skillswap.domain.publicacion.FranjaHoraria;
+import com.skillswap.domain.publicacion.Modalidad;
+import com.skillswap.domain.publicacion.Organizacion;
+import com.skillswap.domain.publicacion.Publicacion;
+import com.skillswap.domain.publicacion.TipoPublicacion;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

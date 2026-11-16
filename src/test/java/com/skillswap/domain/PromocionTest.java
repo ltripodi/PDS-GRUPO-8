@@ -1,5 +1,11 @@
 package com.skillswap.domain;
 
+import com.skillswap.domain.compartido.SkillCoins;
+import com.skillswap.domain.precio.CalculadorPrecio;
+import com.skillswap.domain.precio.PrecioBase;
+import com.skillswap.domain.precio.PrecioConPromocion;
+import com.skillswap.domain.precio.Promocion;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

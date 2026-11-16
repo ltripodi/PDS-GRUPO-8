@@ -6,8 +6,9 @@
 
 ### Demo y ejecución
 
-- `presentation/ConsolaSkillSwap`: tiene el `main`, login simulado y un menú con todos los casos de uso. La opción **D** es la demo guiada.
-- `presentation/ContenedorAplicacion`: es el composition root, el único lugar que arma repositorios, servicios y controllers.
+- `SkillSwapApplication` (raíz): tiene el `main` y es el composition root, el único lugar que arma repositorios, servicios y controllers.
+- `presentation/consola/ConsolaSkillSwap`: login simulado y un menú con todos los casos de uso. La opción **D** es la demo guiada.
+- Paquetes reorganizados por capa y por funcionalidad (ver `docs/arquitectura.md`).
 - `README`: instrucciones para ejecutar (`mvn compile exec:java`) y credenciales por `-D`.
 - `show_sql` está apagado. Se prende con `-Dhibernate.show_sql=true`.
 

@@ -63,13 +63,13 @@
 
     <build>
         <plugins>
-            <!-- mvn compile exec:java -> abre la consola de la demo (composition root en ContenedorAplicacion) -->
+            <!-- mvn compile exec:java -> arranca SkillSwapApplication (composition root) y abre la consola -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
                 <configuration>
-                    <mainClass>com.skillswap.presentation.ConsolaSkillSwap</mainClass>
+                    <mainClass>com.skillswap.SkillSwapApplication</mainClass>
                     <systemProperties>
                         <systemProperty>
                             <key>net.bytebuddy.experimental</key>

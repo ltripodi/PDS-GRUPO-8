@@ -1,21 +1,35 @@
 package com.skillswap.application;
 
-import com.skillswap.application.ErrorAplicacion;
-import com.skillswap.controllers.ContratacionController;
-import com.skillswap.domain.Categoria;
-import com.skillswap.domain.Contratacion;
-import com.skillswap.domain.EstadoContratacionBase;
-import com.skillswap.domain.EventoDominio;
-import com.skillswap.domain.FranjaHoraria;
-import com.skillswap.domain.Modalidad;
-import com.skillswap.domain.Perfil;
-import com.skillswap.domain.PoliticaCancelacion;
-import com.skillswap.domain.Publicacion;
-import com.skillswap.domain.RegistroTransicion;
-import com.skillswap.domain.SkillCoins;
-import com.skillswap.domain.Solicitud;
-import com.skillswap.domain.TipoEvento;
-import com.skillswap.domain.TipoPublicacion;
+import com.skillswap.application.busqueda.FiltrosBusqueda;
+import com.skillswap.application.compartido.ErrorAplicacion;
+import com.skillswap.application.compartido.Pagina;
+import com.skillswap.application.contratacion.ContratacionDTO;
+import com.skillswap.application.contratacion.ContratacionRepository;
+import com.skillswap.application.contratacion.ContratacionService;
+import com.skillswap.application.contratacion.DatosSolicitudDTO;
+import com.skillswap.application.contratacion.EstadoContratacionDTO;
+import com.skillswap.application.contratacion.RegistroHistorialDTO;
+import com.skillswap.application.evento.PublicadorEventosPort;
+import com.skillswap.application.pagos.PagoService;
+import com.skillswap.application.perfil.PerfilRepository;
+import com.skillswap.application.publicacion.PublicacionRepository;
+import com.skillswap.domain.compartido.RegistroTransicion;
+import com.skillswap.domain.compartido.SkillCoins;
+import com.skillswap.domain.contratacion.Contratacion;
+import com.skillswap.domain.contratacion.EstadoContratacionBase;
+import com.skillswap.domain.contratacion.PoliticaCancelacion;
+import com.skillswap.domain.contratacion.Solicitud;
+import com.skillswap.domain.evento.EventoDominio;
+import com.skillswap.domain.evento.ObservadorEvento;
+import com.skillswap.domain.evento.TipoEvento;
+import com.skillswap.domain.perfil.Perfil;
+import com.skillswap.domain.publicacion.Categoria;
+import com.skillswap.domain.publicacion.FranjaHoraria;
+import com.skillswap.domain.publicacion.Modalidad;
+import com.skillswap.domain.publicacion.Publicacion;
+import com.skillswap.domain.publicacion.TipoPublicacion;
+import com.skillswap.presentation.controller.ContratacionController;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -368,7 +382,7 @@ class IntegranteTresTest {
         }
 
         @Override
-        public void suscribir(com.skillswap.domain.ObservadorEvento obs) {
+        public void suscribir(com.skillswap.domain.evento.ObservadorEvento obs) {
         }
 
         List<TipoEvento> tipos() {

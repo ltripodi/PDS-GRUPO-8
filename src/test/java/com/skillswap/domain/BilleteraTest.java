@@ -1,5 +1,8 @@
 package com.skillswap.domain;
 
+import com.skillswap.domain.compartido.SkillCoins;
+import com.skillswap.domain.pagos.Billetera;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

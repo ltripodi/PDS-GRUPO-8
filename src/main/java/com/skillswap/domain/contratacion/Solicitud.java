@@ -1,0 +1,111 @@
+package com.skillswap.domain.contratacion;
+
+import com.skillswap.domain.perfil.Perfil;
+import com.skillswap.domain.publicacion.FranjaHoraria;
+import com.skillswap.domain.publicacion.Organizacion;
+import com.skillswap.domain.publicacion.Publicacion;
+
+import java.time.Instant;
+import java.util.UUID;
+
+/* Solicitud de un cliente (consigna 4.4). Las reglas de creacion estan en crear(...). */
+public class Solicitud {
+    private UUID id;
+
+    private UUID clienteId;
+
+    private String mensaje;
+
+    private String objetivo;
+
+    private UUID franjaId;
+
+    private Publicacion publicacion;
+
+    private Instant fechaCreacion;
+
+    protected Solicitud() {
+    }
+
+    public Solicitud(UUID clienteId, Publicacion publicacion, UUID franjaId, String mensaje, String objetivo) {
+        if (clienteId == null || publicacion == null) {
+            throw new IllegalArgumentException("El cliente y la publicacion son obligatorios");
+        }
+        this.id = UUID.randomUUID();
+        this.clienteId = clienteId;
+        this.publicacion = publicacion;
+        this.franjaId = franjaId;
+        this.mensaje = mensaje;
+        this.objetivo = objetivo;
+        this.fechaCreacion = Instant.now();
+    }
+
+    /* Factory Method con las reglas de negocio de la seccion 5. */
+    public static Solicitud crear(Perfil cliente, Publicacion publicacion, UUID franjaId,
+                                  String mensaje, String objetivo) {
+        if (cliente == null || !cliente.isActivo()) {
+            throw new IllegalArgumentException("La solicitud requiere un perfil activo");
+        }
+        if (publicacion == null) {
+            throw new IllegalArgumentException("La publicacion es obligatoria");
+        }
+        if (cliente.getId().equals(publicacion.getAutorId())) {
+            throw new IllegalArgumentException("El autor no puede solicitar su propia publicacion");
+        }
+        // En un desafio el autor es la organizacion: su representante tampoco puede postularse.
+        Organizacion organizacion = publicacion.getOrganizacion();
+        if (organizacion != null && cliente.getUserId().equals(organizacion.getUserIdAutorizado())) {
+            throw new IllegalArgumentException("La organizacion no puede solicitar su propio desafio");
+        }
+        if (!publicacion.admiteSolicitud()) {
+            throw new IllegalStateException("Una publicacion no publicada no admite solicitudes");
+        }
+        if (objetivo == null || objetivo.isBlank()) {
+            throw new IllegalArgumentException("La solicitud requiere un objetivo");
+        }
+
+        FranjaHoraria franja = publicacion.getFranjas().stream()
+                .filter(f -> f.getId().equals(franjaId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("La franja elegida no pertenece a la publicacion"));
+
+        if (!Instant.now().isBefore(franja.getInicio())) {
+            throw new IllegalStateException("La franja elegida ya comenzo o ya paso");
+        }
+        // Chequeo temprano: el cupo se bloquea recien al aceptar.
+        if (!franja.hayCupo()) {
+            throw new IllegalStateException("La franja elegida no tiene cupo disponible");
+        }
+
+        String mensajeLimpio = mensaje == null ? "" : mensaje.trim();
+        return new Solicitud(cliente.getId(), publicacion, franjaId, mensajeLimpio, objetivo.trim());
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getClienteId() {
+        return clienteId;
+    }
+
+    public String getMensaje() {
+        return mensaje;
+    }
+
+    public String getObjetivo() {
+        return objetivo;
+    }
+
+    public UUID getFranjaId() {
+        return franjaId;
+    }
+
+    public Publicacion getPublicacion() {
+        return publicacion;
+    }
+
+    public Instant getFechaCreacion() {
+        return fechaCreacion;
+    }
+}

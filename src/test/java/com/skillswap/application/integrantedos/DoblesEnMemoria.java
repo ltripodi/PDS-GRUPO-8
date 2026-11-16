@@ -1,21 +1,21 @@
 package com.skillswap.application.integrantedos;
 
-import com.skillswap.application.ContratacionRepository;
-import com.skillswap.application.FiltrosBusqueda;
-import com.skillswap.application.NotificacionRepository;
-import com.skillswap.application.OrganizacionRepository;
-import com.skillswap.application.Pagina;
-import com.skillswap.application.PerfilRepository;
-import com.skillswap.application.PublicacionRepository;
-import com.skillswap.application.SolicitudRepository;
-import com.skillswap.domain.Categoria;
-import com.skillswap.domain.Contratacion;
-import com.skillswap.domain.EstadoPublicacion;
-import com.skillswap.domain.Notificacion;
-import com.skillswap.domain.Organizacion;
-import com.skillswap.domain.Perfil;
-import com.skillswap.domain.Publicacion;
-import com.skillswap.domain.Solicitud;
+import com.skillswap.application.busqueda.FiltrosBusqueda;
+import com.skillswap.application.compartido.Pagina;
+import com.skillswap.application.contratacion.ContratacionRepository;
+import com.skillswap.application.contratacion.SolicitudRepository;
+import com.skillswap.application.notificacion.NotificacionRepository;
+import com.skillswap.application.perfil.PerfilRepository;
+import com.skillswap.application.publicacion.OrganizacionRepository;
+import com.skillswap.application.publicacion.PublicacionRepository;
+import com.skillswap.domain.contratacion.Contratacion;
+import com.skillswap.domain.contratacion.Solicitud;
+import com.skillswap.domain.notificacion.Notificacion;
+import com.skillswap.domain.perfil.Perfil;
+import com.skillswap.domain.publicacion.Categoria;
+import com.skillswap.domain.publicacion.EstadoPublicacion;
+import com.skillswap.domain.publicacion.Organizacion;
+import com.skillswap.domain.publicacion.Publicacion;
 
 import java.time.Instant;
 import java.util.ArrayList;

@@ -3,13 +3,16 @@ SkillSwap - TP Proceso de Desarrollo de Software - UADE
 
 ## Estructura del proyecto
 
-El proyecto usa Maven y separa el código por capas dentro de `com.skillswap`:
+El proyecto usa Maven y organiza `com.skillswap` por capas. Dentro de cada capa, las clases se agrupan por funcionalidad (`busqueda`, `contratacion`, `pagos`, `perfil`, `publicacion`…). El árbol completo y su justificación están en [docs/arquitectura.md](docs/arquitectura.md).
 
-- `domain`: entidades y reglas de negocio.
-- `application`: casos de uso y servicios de aplicación.
-- `infrastructure`: persistencia e integraciones externas.
-- `controllers`: adaptadores de entrada. Reciben y devuelven solo DTOs, y todo error sale como `ErrorAplicacion` (con tipo `DATOS_INVALIDOS`, `SIN_PERMISO`, `ESTADO_INVALIDO`, `CONFLICTO` o `ERROR_INTERNO`).
-- `presentation`: la consola de la demo (`ConsolaSkillSwap`, con el `main`) y el composition root (`ContenedorAplicacion`), que es el único lugar que arma repositorios JPA, servicios y controllers.
+- `SkillSwapApplication` (raíz): el `main` y el composition root, que es el único lugar que arma repositorios JPA, servicios y controllers.
+- `domain`: entidades, reglas, estados (State), políticas (Strategy), eventos y precio (Decorator). No conoce JPA: el mapeo está en `orm.xml`.
+- `application`: casos de uso, interfaces de repositorio (puertos) y DTOs.
+- `infrastructure`: repositorios JPA (`persistence`), publicador de eventos (`evento`) y adaptadores de email y push (`adapters`).
+- `presentation`:
+  - `controller`: reciben y devuelven solo DTOs, y todo error sale como `ErrorAplicacion` (con tipo `DATOS_INVALIDOS`, `SIN_PERMISO`, `ESTADO_INVALIDO`, `CONFLICTO` o `ERROR_INTERNO`).
+  - `contrato`: lo que la interfaz recibe.
+  - `consola`: la interfaz de la demo.
 
 ## Cómo ejecutar la aplicación
 
@@ -35,7 +38,7 @@ El proyecto usa Maven y separa el código por capas dentro de `com.skillswap`:
    mvn compile exec:java -Djakarta.persistence.jdbc.user=miusuario -Djakarta.persistence.jdbc.password=miclave
    ```
 
-   Desde el IDE: ejecutar `com.skillswap.presentation.ConsolaSkillSwap` con la opción de VM `-Dnet.bytebuddy.experimental=true`.
+   Desde el IDE: ejecutar `com.skillswap.SkillSwapApplication` con la opción de VM `-Dnet.bytebuddy.experimental=true`.
 4. Al arrancar, Flyway crea las tablas y carga los datos demo (V1 a V5). La primera vez tarda unos segundos.
 5. Iniciar sesión con un usuario demo (es un login simulado, sin clave):
 

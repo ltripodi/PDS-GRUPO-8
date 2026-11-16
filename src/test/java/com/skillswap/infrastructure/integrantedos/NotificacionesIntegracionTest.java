@@ -1,41 +1,43 @@
 package com.skillswap.infrastructure.integrantedos;
 
-import com.skillswap.application.ErrorAplicacion;
-import com.skillswap.application.ContratacionDTO;
-import com.skillswap.application.ContratacionService;
-import com.skillswap.application.DatosSolicitudDTO;
-import com.skillswap.application.NotificacionDTO;
-import com.skillswap.application.NotificacionService;
-import com.skillswap.application.NotificacionesObserver;
-import com.skillswap.application.Pagina;
-import com.skillswap.application.PagoService;
-import com.skillswap.application.PerfilRepository;
-import com.skillswap.application.UnidadTransaccional;
-import com.skillswap.controllers.NotificacionController;
-import com.skillswap.domain.CanalNotificacion;
-import com.skillswap.domain.Categoria;
-import com.skillswap.domain.EventoDominio;
-import com.skillswap.domain.FranjaHoraria;
-import com.skillswap.domain.Modalidad;
-import com.skillswap.domain.Perfil;
-import com.skillswap.domain.PoliticaSinReintegro;
-import com.skillswap.domain.Publicacion;
-import com.skillswap.domain.SkillCoins;
-import com.skillswap.domain.TipoEvento;
-import com.skillswap.domain.TipoPublicacion;
-import com.skillswap.infrastructure.CanalInterno;
-import com.skillswap.infrastructure.EmailExternoMock;
-import com.skillswap.infrastructure.EmailMockAdapter;
-import com.skillswap.infrastructure.JPAUtil;
-import com.skillswap.infrastructure.JpaContratacionRepository;
-import com.skillswap.infrastructure.JpaNotificacionRepository;
-import com.skillswap.infrastructure.JpaOrganizacionRepository;
-import com.skillswap.infrastructure.JpaPerfilRepository;
-import com.skillswap.infrastructure.JpaPublicacionRepository;
-import com.skillswap.infrastructure.JpaUnidadTransaccional;
-import com.skillswap.infrastructure.PublicadorEventosEnMemoria;
-import com.skillswap.infrastructure.PushExternoMock;
-import com.skillswap.infrastructure.PushMockAdapter;
+import com.skillswap.application.compartido.ErrorAplicacion;
+import com.skillswap.application.compartido.Pagina;
+import com.skillswap.application.compartido.UnidadTransaccional;
+import com.skillswap.application.contratacion.ContratacionDTO;
+import com.skillswap.application.contratacion.ContratacionService;
+import com.skillswap.application.contratacion.DatosSolicitudDTO;
+import com.skillswap.application.notificacion.NotificacionDTO;
+import com.skillswap.application.notificacion.NotificacionesObserver;
+import com.skillswap.application.notificacion.NotificacionService;
+import com.skillswap.application.pagos.PagoService;
+import com.skillswap.application.perfil.PerfilRepository;
+import com.skillswap.domain.compartido.SkillCoins;
+import com.skillswap.domain.contratacion.PoliticaSinReintegro;
+import com.skillswap.domain.evento.EventoDominio;
+import com.skillswap.domain.evento.TipoEvento;
+import com.skillswap.domain.notificacion.CanalNotificacion;
+import com.skillswap.domain.notificacion.Notificacion;
+import com.skillswap.domain.perfil.Perfil;
+import com.skillswap.domain.publicacion.Categoria;
+import com.skillswap.domain.publicacion.FranjaHoraria;
+import com.skillswap.domain.publicacion.Modalidad;
+import com.skillswap.domain.publicacion.Publicacion;
+import com.skillswap.domain.publicacion.TipoPublicacion;
+import com.skillswap.infrastructure.adapters.notificacion.CanalInterno;
+import com.skillswap.infrastructure.adapters.notificacion.EmailExternoMock;
+import com.skillswap.infrastructure.adapters.notificacion.EmailMockAdapter;
+import com.skillswap.infrastructure.adapters.notificacion.PushExternoMock;
+import com.skillswap.infrastructure.adapters.notificacion.PushMockAdapter;
+import com.skillswap.infrastructure.evento.PublicadorEventosEnMemoria;
+import com.skillswap.infrastructure.persistence.JpaContratacionRepository;
+import com.skillswap.infrastructure.persistence.JpaNotificacionRepository;
+import com.skillswap.infrastructure.persistence.JpaOrganizacionRepository;
+import com.skillswap.infrastructure.persistence.JpaPerfilRepository;
+import com.skillswap.infrastructure.persistence.JpaPublicacionRepository;
+import com.skillswap.infrastructure.persistence.JpaUnidadTransaccional;
+import com.skillswap.infrastructure.persistence.JPAUtil;
+import com.skillswap.presentation.controller.NotificacionController;
+
 import jakarta.persistence.EntityManager;
 import org.hibernate.Session;
 import org.junit.jupiter.api.DisplayName;
@@ -162,7 +164,7 @@ class NotificacionesIntegracionTest {
     void laBandejaSePaginaEnLaBaseYMarcarLeidaQuedaGuardado() {
         String usuario = "user-" + UUID.randomUUID();
         for (int i = 0; i < 5; i++) {
-            notificaciones.guardar(new com.skillswap.domain.Notificacion(usuario, TipoEvento.ACEPTACION, "n" + i, "d"));
+            notificaciones.guardar(new com.skillswap.domain.notificacion.Notificacion(usuario, TipoEvento.ACEPTACION, "n" + i, "d"));
         }
 
         Pagina<NotificacionDTO> primera = controller.listar(usuario, 0, 2);

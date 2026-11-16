@@ -12,22 +12,22 @@
         <!-- El mapeo esta en orm.xml: el dominio no tiene anotaciones JPA (Clean Architecture, seccion 6). -->
         <mapping-file>META-INF/orm.xml</mapping-file>
 
-        <class>com.skillswap.domain.Habilidad</class>
-        <class>com.skillswap.domain.Categoria</class>
-        <class>com.skillswap.domain.Organizacion</class>
-        <class>com.skillswap.domain.Publicacion</class>
-        <class>com.skillswap.domain.FranjaHoraria</class>
-        <class>com.skillswap.domain.Solicitud</class>
-        <class>com.skillswap.domain.Reserva</class>
-        <class>com.skillswap.domain.PropuestaReprogramacion</class>
-        <class>com.skillswap.domain.Billetera</class>
-        <class>com.skillswap.domain.Movimiento</class>
-        <class>com.skillswap.domain.Pago</class>
-        <class>com.skillswap.domain.Calificacion</class>
-        <class>com.skillswap.domain.Notificacion</class>
-        <class>com.skillswap.domain.Promocion</class>
-        <class>com.skillswap.domain.Perfil</class>
-        <class>com.skillswap.domain.Contratacion</class>
+        <class>com.skillswap.domain.perfil.Habilidad</class>
+        <class>com.skillswap.domain.publicacion.Categoria</class>
+        <class>com.skillswap.domain.publicacion.Organizacion</class>
+        <class>com.skillswap.domain.publicacion.Publicacion</class>
+        <class>com.skillswap.domain.publicacion.FranjaHoraria</class>
+        <class>com.skillswap.domain.contratacion.Solicitud</class>
+        <class>com.skillswap.domain.contratacion.Reserva</class>
+        <class>com.skillswap.domain.contratacion.PropuestaReprogramacion</class>
+        <class>com.skillswap.domain.pagos.Billetera</class>
+        <class>com.skillswap.domain.pagos.Movimiento</class>
+        <class>com.skillswap.domain.pagos.Pago</class>
+        <class>com.skillswap.domain.calificacion.Calificacion</class>
+        <class>com.skillswap.domain.notificacion.Notificacion</class>
+        <class>com.skillswap.domain.precio.Promocion</class>
+        <class>com.skillswap.domain.perfil.Perfil</class>
+        <class>com.skillswap.domain.contratacion.Contratacion</class>
 
         <properties>
             <property name="jakarta.persistence.jdbc.driver"

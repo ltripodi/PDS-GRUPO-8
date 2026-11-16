@@ -1,19 +1,30 @@
 package com.skillswap.application;
 
-import com.skillswap.domain.Calificacion;
-import com.skillswap.domain.Categoria;
-import com.skillswap.domain.Contratacion;
-import com.skillswap.domain.DisponibilidadPerfil;
-import com.skillswap.domain.EstadoPublicacion;
-import com.skillswap.domain.FranjaHoraria;
-import com.skillswap.domain.Habilidad;
-import com.skillswap.domain.Modalidad;
-import com.skillswap.domain.Organizacion;
-import com.skillswap.domain.Perfil;
-import com.skillswap.domain.Publicacion;
-import com.skillswap.domain.SkillCoins;
-import com.skillswap.domain.Solicitud;
-import com.skillswap.domain.TipoPublicacion;
+import com.skillswap.application.busqueda.FiltrosBusqueda;
+import com.skillswap.application.calificacion.CalificacionRepository;
+import com.skillswap.application.calificacion.CalificacionService;
+import com.skillswap.application.compartido.Pagina;
+import com.skillswap.application.contratacion.ContratacionRepository;
+import com.skillswap.application.perfil.PerfilRepository;
+import com.skillswap.application.publicacion.DatosPublicacionDTO;
+import com.skillswap.application.publicacion.OrganizacionRepository;
+import com.skillswap.application.publicacion.PublicacionRepository;
+import com.skillswap.application.publicacion.PublicacionService;
+import com.skillswap.domain.calificacion.Calificacion;
+import com.skillswap.domain.compartido.SkillCoins;
+import com.skillswap.domain.contratacion.Contratacion;
+import com.skillswap.domain.contratacion.Solicitud;
+import com.skillswap.domain.perfil.DisponibilidadPerfil;
+import com.skillswap.domain.perfil.Habilidad;
+import com.skillswap.domain.perfil.Perfil;
+import com.skillswap.domain.publicacion.Categoria;
+import com.skillswap.domain.publicacion.EstadoPublicacion;
+import com.skillswap.domain.publicacion.FranjaHoraria;
+import com.skillswap.domain.publicacion.Modalidad;
+import com.skillswap.domain.publicacion.Organizacion;
+import com.skillswap.domain.publicacion.Publicacion;
+import com.skillswap.domain.publicacion.TipoPublicacion;
+
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

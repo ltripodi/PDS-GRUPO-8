@@ -14,13 +14,11 @@
                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                  xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence/orm https://jakarta.ee/xml/ns/persistence/orm/orm_3_1.xsd"
                  version="3.1">
-
-    <package>com.skillswap.domain</package>
     <access>FIELD</access>
 
     <!-- ===================== Perfiles y reputacion (4.1) ===================== -->
 
-    <entity class="Perfil">
+    <entity class="com.skillswap.domain.perfil.Perfil">
         <table name="perfiles"/>
         <attributes>
             <id name="id"/>
@@ -57,7 +55,7 @@
         </attributes>
     </entity>
 
-    <entity class="Habilidad">
+    <entity class="com.skillswap.domain.perfil.Habilidad">
         <table name="habilidades"/>
         <attributes>
             <id name="id"/>
@@ -67,7 +65,7 @@
         </attributes>
     </entity>
 
-    <entity class="Calificacion">
+    <entity class="com.skillswap.domain.calificacion.Calificacion">
         <table name="calificaciones">
             <unique-constraint>
                 <column-name>contratacion_id</column-name>
@@ -93,7 +91,7 @@
 
     <!-- ===================== Publicaciones (4.2) ===================== -->
 
-    <entity class="Categoria">
+    <entity class="com.skillswap.domain.publicacion.Categoria">
         <table name="categorias"/>
         <attributes>
             <id name="id"/>
@@ -103,7 +101,7 @@
         </attributes>
     </entity>
 
-    <entity class="Organizacion">
+    <entity class="com.skillswap.domain.publicacion.Organizacion">
         <table name="organizaciones"/>
         <attributes>
             <id name="id"/>
@@ -116,7 +114,7 @@
         </attributes>
     </entity>
 
-    <entity class="Publicacion">
+    <entity class="com.skillswap.domain.publicacion.Publicacion">
         <table name="publicaciones"/>
         <attributes>
             <id name="id"/>
@@ -190,7 +188,7 @@
         </attributes>
     </entity>
 
-    <entity class="FranjaHoraria">
+    <entity class="com.skillswap.domain.publicacion.FranjaHoraria">
         <table name="franjas_horarias"/>
         <attributes>
             <id name="id"/>
@@ -201,7 +199,7 @@
 
     <!-- ===================== Solicitud, reserva y contratacion (4.4 y 4.5) ===================== -->
 
-    <entity class="Solicitud">
+    <entity class="com.skillswap.domain.contratacion.Solicitud">
         <table name="solicitudes"/>
         <attributes>
             <id name="id"/>
@@ -223,7 +221,7 @@
         </attributes>
     </entity>
 
-    <entity class="Reserva">
+    <entity class="com.skillswap.domain.contratacion.Reserva">
         <table name="reservas"/>
         <attributes>
             <id name="id"/>
@@ -236,7 +234,7 @@
         </attributes>
     </entity>
 
-    <entity class="PropuestaReprogramacion">
+    <entity class="com.skillswap.domain.contratacion.PropuestaReprogramacion">
         <table name="propuestas_reprogramacion"/>
         <attributes>
             <id name="id"/>
@@ -258,7 +256,7 @@
         </attributes>
     </entity>
 
-    <entity class="Contratacion">
+    <entity class="com.skillswap.domain.contratacion.Contratacion">
         <table name="contrataciones"/>
         <!-- State: en la base se guarda el nombre del estado y al cargar se reconstruye el objeto. -->
         <post-load method-name="reconstruirEstadoActual"/>
@@ -310,7 +308,7 @@
 
     <!-- ===================== SkillCoins, pagos y promociones ===================== -->
 
-    <entity class="Billetera">
+    <entity class="com.skillswap.domain.pagos.Billetera">
         <table name="billeteras"/>
         <attributes>
             <id name="titularId">
@@ -332,7 +330,7 @@
         </attributes>
     </entity>
 
-    <entity class="Movimiento">
+    <entity class="com.skillswap.domain.pagos.Movimiento">
         <table name="movimientos"/>
         <attributes>
             <id name="id"/>
@@ -347,7 +345,7 @@
         </attributes>
     </entity>
 
-    <entity class="Pago">
+    <entity class="com.skillswap.domain.pagos.Pago">
         <table name="pagos"/>
         <attributes>
             <id name="id"/>
@@ -370,7 +368,7 @@
         </attributes>
     </entity>
 
-    <entity class="Promocion">
+    <entity class="com.skillswap.domain.precio.Promocion">
         <table name="promociones"/>
         <attributes>
             <id name="id"/>
@@ -384,7 +382,7 @@
 
     <!-- ===================== Notificaciones (4.6) ===================== -->
 
-    <entity class="Notificacion">
+    <entity class="com.skillswap.domain.notificacion.Notificacion">
         <!-- La bandeja se consulta por destinatario, de la mas reciente a la mas vieja. -->
         <table name="notificaciones">
             <index name="idx_notificaciones_destinatario_fecha" column-list="destinatario_id, fecha"/>
@@ -412,13 +410,13 @@
 
     <!-- ===================== Value objects (embeddables) ===================== -->
 
-    <embeddable class="SkillCoins"/>
+    <embeddable class="com.skillswap.domain.compartido.SkillCoins"/>
 
-    <embeddable class="RegistroTransicion"/>
+    <embeddable class="com.skillswap.domain.compartido.RegistroTransicion"/>
 
-    <embeddable class="DisponibilidadPerfil"/>
+    <embeddable class="com.skillswap.domain.perfil.DisponibilidadPerfil"/>
 
-    <embeddable class="PreferenciaNotificacion">
+    <embeddable class="com.skillswap.domain.notificacion.PreferenciaNotificacion">
         <attributes>
             <element-collection name="canales" fetch="EAGER">
                 <column name="canal"/>
