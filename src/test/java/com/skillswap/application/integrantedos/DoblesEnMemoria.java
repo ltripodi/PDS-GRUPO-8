@@ -68,6 +68,11 @@ final class DoblesEnMemoria {
         public Optional<Organizacion> buscarPorId(UUID id) {
             return Optional.ofNullable(porId.get(id));
         }
+
+        @Override
+        public Optional<Organizacion> buscarPorUserIdAutorizado(String userId) {
+            return porId.values().stream().filter(organizacion -> organizacion.autoriza(userId)).findFirst();
+        }
     }
 
     /** Devuelve las notificaciones en el orden en que se guardaron. */

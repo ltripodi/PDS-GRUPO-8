@@ -1,5 +1,6 @@
 package com.skillswap.presentation.ui;
 
+import com.skillswap.application.busqueda.CategoriaDTO;
 import com.skillswap.application.busqueda.FiltrosBusqueda;
 import com.skillswap.application.compartido.ErrorAplicacion;
 import com.skillswap.application.contratacion.ContratacionDTO;
@@ -9,9 +10,13 @@ import com.skillswap.application.notificacion.NotificacionDTO;
 import com.skillswap.application.pagos.ComprobantePagoDTO;
 import com.skillswap.application.pagos.MovimientoDTO;
 import com.skillswap.application.perfil.PerfilPublicoDTO;
+import com.skillswap.application.publicacion.DatosPublicacionDTO;
 import com.skillswap.application.publicacion.FranjaDTO;
 import com.skillswap.application.publicacion.PublicacionDTO;
 import com.skillswap.domain.busqueda.TipoRecomendacion;
+import com.skillswap.domain.publicacion.EstadoPublicacion;
+import com.skillswap.domain.publicacion.Modalidad;
+import com.skillswap.domain.publicacion.TipoPublicacion;
 import com.skillswap.presentation.consola.DemoGuiada;
 import com.skillswap.presentation.contrato.Controladores;
 
@@ -22,11 +27,17 @@ import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -99,9 +110,16 @@ public final class SkillSwapFrame extends JFrame {
     private final DefaultTableModel modeloNotificaciones = modelo("", "Fecha", "Título", "Detalle");
     private final JLabel mocks = new JLabel(" ");
 
-    // Perfil
-    private final JTextArea perfil = areaTexto(7);
-    private final DefaultTableModel modeloPropias = modelo("Publicación", "Estado", "Precio", "Franjas");
+    // Perfil y publicaciones propias (4.2)
+    private final JTextArea perfil = areaTexto(5);
+    private final DefaultTableModel modeloPropias = modelo("Publicación", "Estado", "Precio", "Duración", "Franjas");
+    private final JTable tablaPropias = tabla(modeloPropias);
+    private List<PublicacionDTO> propias = List.of();
+    private final Map<JButton, Set<EstadoPublicacion>> accionesPublicacion = new LinkedHashMap<>();
+    /* acme-admin no tiene perfil: representa a una organizacion y publica desafios. */
+    private boolean representaOrganizacion;
+    /* El aviso de "sin perfil" se muestra al elegir el usuario, no en cada refresco. */
+    private boolean avisarAlCargar;
 
     public SkillSwapFrame(Controladores app) {
         super("SkillSwap");
@@ -320,11 +338,52 @@ public final class SkillSwapFrame extends JFrame {
 
     private JComponent panelPerfil() {
         perfil.setName("perfil");
-        JTable propias = tabla(modeloPropias);
-        anchos(propias, 360, 120, 90, 80);
-        JPanel publicacionesPropias = new JPanel(new BorderLayout());
-        publicacionesPropias.setBorder(seccion("Mis publicaciones"));
-        publicacionesPropias.add(new JScrollPane(propias), BorderLayout.CENTER);
+        tablaPropias.setName("tablaPropias");
+        anchos(tablaPropias, 360, 110, 90, 90, 70);
+        tablaPropias.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                habilitarAccionesPublicacion();
+            }
+        });
+
+        JPanel botones = new JPanel(new GridLayout(0, 1, 0, 6));
+        JButton nueva = boton("Nueva publicación…", this::nuevaPublicacion, "nuevaPublicacion");
+        nueva.setFont(nueva.getFont().deriveFont(Font.BOLD));
+        botones.add(nueva);
+        botones.add(new JSeparator());
+        accionPublicacion(botones, "Agregar franja…", "agregarFranja", EnumSet.of(EstadoPublicacion.BORRADOR),
+                this::agregarFranja);
+        accionPublicacion(botones, "Publicar", "publicar",
+                EnumSet.of(EstadoPublicacion.BORRADOR, EstadoPublicacion.PAUSADA),
+                p -> cambiarEstadoPublicacion(p, EstadoPublicacion.PUBLICADA,
+                        "Publicada: ya aparece en Explorar y admite solicitudes."));
+        accionPublicacion(botones, "Pausar", "pausar", EnumSet.of(EstadoPublicacion.PUBLICADA),
+                p -> cambiarEstadoPublicacion(p, EstadoPublicacion.PAUSADA,
+                        "Pausada: no aparece en Explorar ni admite solicitudes."));
+        accionPublicacion(botones, "Cerrar", "cerrar",
+                EnumSet.of(EstadoPublicacion.PUBLICADA, EstadoPublicacion.PAUSADA),
+                p -> cambiarEstadoPublicacion(p, EstadoPublicacion.CERRADA,
+                        "Cerrada: no recibe más solicitudes."));
+        accionPublicacion(botones, "Cancelar…", "cancelarPublicacion",
+                EnumSet.of(EstadoPublicacion.BORRADOR, EstadoPublicacion.PUBLICADA, EstadoPublicacion.PAUSADA),
+                this::cancelarPublicacion);
+
+        JLabel ayuda = new JLabel("<html>Ciclo: borrador → (franjas) → publicada ⇄ pausada → cerrada. "
+                + "Las franjas se agregan mientras es borrador.</html>");
+        ayuda.setForeground(GRIS);
+        JPanel lateral = new JPanel(new BorderLayout(0, 8));
+        lateral.setBorder(seccion("Publicaciones"));
+        lateral.add(botones, BorderLayout.NORTH);
+        lateral.add(ayuda, BorderLayout.SOUTH);
+        lateral.setPreferredSize(new Dimension(250, 0));
+
+        JPanel publicacionesPropias = new JPanel(new BorderLayout(12, 0));
+        JPanel tablaConTitulo = new JPanel(new BorderLayout());
+        tablaConTitulo.setBorder(seccion("Mis publicaciones"));
+        tablaConTitulo.add(new JScrollPane(tablaPropias), BorderLayout.CENTER);
+        publicacionesPropias.add(tablaConTitulo, BorderLayout.CENTER);
+        publicacionesPropias.add(lateral, BorderLayout.EAST);
+
         JScrollPane datos = new JScrollPane(perfil);
         datos.setBorder(seccion("Perfil público"));
         JPanel panel = new JPanel(new BorderLayout(0, 10));
@@ -340,6 +399,7 @@ public final class SkillSwapFrame extends JFrame {
 
     private void cambiarUsuario(String nuevo) {
         usuario = nuevo;
+        avisarAlCargar = true;
         tablaContrataciones.clearSelection();
         ok("Sesión iniciada como " + nuevo + ".");
         refrescar();
@@ -449,6 +509,103 @@ public final class SkillSwapFrame extends JFrame {
                             JOptionPane.INFORMATION_MESSAGE);
                     ok("Comprobante consultado.");
                 });
+    }
+
+    // ---------- publicaciones propias (4.2) ----------
+
+    /* Primero trae las categorias; despues pide los datos. Opcional: primera franja y publicar en el mismo paso. */
+    private void nuevaPublicacion() {
+        trabajo("Cargando categorías", () -> app.busqueda().listarCategorias(), categorias -> {
+            JComboBox<TipoPublicacion> tipo = new JComboBox<>(TipoPublicacion.values());
+            tipo.setSelectedItem(representaOrganizacion ? TipoPublicacion.DESAFIO : TipoPublicacion.MENTORIA);
+            JTextField titulo = new JTextField(28);
+            JTextArea descripcion = new JTextArea(3, 28);
+            descripcion.setLineWrap(true);
+            descripcion.setWrapStyleWord(true);
+            descripcion.setFont(fuente(Font.PLAIN, 13f));
+            JComboBox<CategoriaItem> categoria = new JComboBox<>(categorias.stream().map(CategoriaItem::new)
+                    .toArray(CategoriaItem[]::new));
+            JComboBox<Modalidad> modalidad = new JComboBox<>(Modalidad.values());
+            JSpinner duracion = new JSpinner(new SpinnerNumberModel(60, 15, 960, 15));
+            JSpinner cupo = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
+            JSpinner precio = new JSpinner(new SpinnerNumberModel(100, 0, 100_000, 10));
+            JTextField etiquetas = new JTextField();
+            JCheckBox conFranja = new JCheckBox("Agregar la primera franja", true);
+            JSpinner inicio = selectorFechaHora(proximaSemana());
+            JCheckBox publicar = new JCheckBox("Publicar ahora (si no, queda como borrador)", true);
+            conFranja.addActionListener(e -> {
+                inicio.setEnabled(conFranja.isSelected());
+                publicar.setEnabled(conFranja.isSelected());
+                publicar.setSelected(conFranja.isSelected() && publicar.isSelected());
+            });
+
+            JPanel formulario = new JPanel(new GridBagLayout());
+            int y = 0;
+            fila(formulario, y++, "Tipo", tipo);
+            fila(formulario, y++, "Título *", titulo);
+            fila(formulario, y++, "Descripción", new JScrollPane(descripcion));
+            fila(formulario, y++, "Categoría", categoria);
+            fila(formulario, y++, "Modalidad", modalidad);
+            fila(formulario, y++, "Duración (min)", duracion);
+            fila(formulario, y++, "Cupo por franja", cupo);
+            fila(formulario, y++, "Precio (SkillCoins)", precio);
+            fila(formulario, y++, "Etiquetas", etiquetas);
+            filaCompleta(formulario, y++, new JSeparator());
+            filaCompleta(formulario, y++, conFranja);
+            fila(formulario, y++, "Inicio", inicio);
+            filaCompleta(formulario, y, publicar);
+
+            if (JOptionPane.showConfirmDialog(this, formulario, "Nueva publicación", JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION) {
+                return;
+            }
+            CategoriaItem elegida = (CategoriaItem) categoria.getSelectedItem();
+            int minutos = (Integer) duracion.getValue();
+            DatosPublicacionDTO datos = new DatosPublicacionDTO(titulo.getText(), descripcion.getText(),
+                    elegida == null ? null : elegida.categoria().id(), (Modalidad) modalidad.getSelectedItem(),
+                    minutos, (Integer) cupo.getValue(), (Integer) precio.getValue(), etiquetas(etiquetas.getText()),
+                    (TipoPublicacion) tipo.getSelectedItem(), null);
+            boolean agregarFranja = conFranja.isSelected();
+            boolean publicarAhora = publicar.isSelected() && agregarFranja;
+            Instant desde = fechaHora(inicio);
+            ejecutar("Creando la publicación", u -> {
+                PublicacionDTO creada = app.publicaciones().crearBorrador(u, datos);
+                if (agregarFranja) {
+                    app.publicaciones().agregarFranja(u, creada.getId(), desde, desde.plus(Duration.ofMinutes(minutos)));
+                }
+                if (publicarAhora) {
+                    app.publicaciones().cambiarEstado(u, creada.getId().toString(), EstadoPublicacion.PUBLICADA);
+                }
+            }, publicarAhora ? "Publicación creada y publicada: ya aparece en Explorar."
+                    : "Borrador creado: agregale franjas y publicalo desde \"Mi perfil\".");
+        });
+    }
+
+    private void agregarFranja(PublicacionDTO p) {
+        JSpinner inicio = selectorFechaHora(proximaSemana());
+        if (!confirmar("Agregar franja", "Inicio de la franja de \"" + p.getTitulo() + "\" (dura "
+                + p.getDuracionMinutos() + " min)", inicio)) {
+            return;
+        }
+        Instant desde = fechaHora(inicio);
+        Instant hasta = desde.plus(Duration.ofMinutes(p.getDuracionMinutos()));
+        ejecutar("Agregando la franja", u -> app.publicaciones().agregarFranja(u, p.getId(), desde, hasta),
+                "Franja agregada: " + FECHA.format(desde) + " a " + HORA.format(hasta) + ".");
+    }
+
+    private void cambiarEstadoPublicacion(PublicacionDTO p, EstadoPublicacion estado, String exito) {
+        ejecutar("Actualizando la publicación",
+                u -> app.publicaciones().cambiarEstado(u, p.getId().toString(), estado), exito);
+    }
+
+    private void cancelarPublicacion(PublicacionDTO p) {
+        String motivo = JOptionPane.showInputDialog(this, "¿Por qué cancelás \"" + p.getTitulo() + "\"?",
+                "Cancelar publicación", JOptionPane.QUESTION_MESSAGE);
+        if (motivo == null) {
+            return;
+        }
+        ejecutar("Cancelando la publicación", u -> app.publicaciones().cancelar(u, p.getId(), motivo),
+                "Publicación cancelada: ya no se puede aceptar ni pagar nada sobre ella.");
     }
 
     private void cargarSkillCoins() {
@@ -569,6 +726,7 @@ public final class SkillSwapFrame extends JFrame {
                 + " emails y " + app.pushEnviados() + " push.");
 
         PerfilPublicoDTO p = datos.perfil();
+        representaOrganizacion = p == null;
         perfil.setText(p == null
                 ? usuario + " no tiene perfil: representa a una organización (publica desafíos)."
                 : p.getNombreVisible() + "  (" + p.getUserId() + ")  ·  " + p.getRol() + "\n"
@@ -577,18 +735,34 @@ public final class SkillSwapFrame extends JFrame {
                 p.getReputacion(), p.getResenas(), p.getProyectosCompletados())
                 + "Habilidades: " + String.join(", ", p.getHabilidades()));
         perfil.setCaretPosition(0);
+        UUID propiaSeleccionada = publicacionPropiaSeleccionada() == null ? null
+                : publicacionPropiaSeleccionada().getId();
+        propias = datos.propias();
         modeloPropias.setRowCount(0);
-        for (PublicacionDTO pub : datos.propias()) {
+        for (PublicacionDTO pub : propias) {
             modeloPropias.addRow(new Object[]{pub.getTitulo(), pub.getEstado(), pub.getPrecio() + " SC",
-                    pub.getFranjas().size()});
+                    pub.getDuracionMinutos() + " min", pub.getFranjas().size()});
         }
+        for (int i = 0; i < propias.size(); i++) {
+            if (propias.get(i).getId().equals(propiaSeleccionada)) {
+                tablaPropias.setRowSelectionInterval(i, i);
+            }
+        }
+        habilitarAccionesPublicacion();
 
-        if (!datos.avisos().isEmpty() && p == null) {
-            info(usuario + ": " + String.join(" · ", datos.avisos()));
+        if (avisarAlCargar && p == null) {
+            info(usuario + " representa a una organización: no tiene perfil público, pero puede publicar desafíos.");
         }
+        avisarAlCargar = false;
     }
 
     private void mostrarPublicaciones(List<PublicacionDTO> lista, String descripcion) {
+        mostrarPublicaciones(lista, descripcion, true);
+    }
+
+    /* avisar=false: refresco silencioso, que ademas mantiene la publicacion elegida si sigue en la lista. */
+    private void mostrarPublicaciones(List<PublicacionDTO> lista, String descripcion, boolean avisar) {
+        UUID elegida = publicacionSeleccionada() == null ? null : publicacionSeleccionada().getId();
         publicaciones = lista;
         modeloPublicaciones.setRowCount(0);
         for (PublicacionDTO p : lista) {
@@ -597,12 +771,20 @@ public final class SkillSwapFrame extends JFrame {
                     String.format("%.1f", p.getReputacion())});
         }
         tituloResultados.setText(descripcion + " (" + lista.size() + ")");
+        int fila = 0;
+        for (int i = 0; i < lista.size(); i++) {
+            if (!avisar && lista.get(i).getId().equals(elegida)) {
+                fila = i;
+            }
+        }
         if (lista.isEmpty()) {
             mostrarPublicacion();
         } else {
-            tablaPublicaciones.setRowSelectionInterval(0, 0);
+            tablaPublicaciones.setRowSelectionInterval(fila, fila);
         }
-        ok(descripcion + ": " + lista.size() + " publicaciones.");
+        if (avisar) {
+            ok(descripcion + ": " + lista.size() + " publicaciones.");
+        }
     }
 
     private void mostrarPublicacion() {
@@ -622,6 +804,18 @@ public final class SkillSwapFrame extends JFrame {
         ContratacionDTO c = contratacionSeleccionada();
         boolean libre = trabajosEnCurso == 0;
         acciones.forEach((boton, estados) -> boton.setEnabled(libre && c != null && estados.contains(c.getEstado())));
+    }
+
+    private void habilitarAccionesPublicacion() {
+        PublicacionDTO p = publicacionPropiaSeleccionada();
+        boolean libre = trabajosEnCurso == 0;
+        accionesPublicacion.forEach((boton, estados) ->
+                boton.setEnabled(libre && p != null && estados.contains(p.getEstado())));
+    }
+
+    private PublicacionDTO publicacionPropiaSeleccionada() {
+        int fila = tablaPropias.getSelectedRow();
+        return fila < 0 || fila >= propias.size() ? null : propias.get(fila);
     }
 
     private PublicacionDTO publicacionSeleccionada() {
@@ -647,7 +841,17 @@ public final class SkillSwapFrame extends JFrame {
         }, listo -> {
             ok(exito);
             refrescar();
+            actualizarExplorar();
         });
+    }
+
+    /* Repite la ultima busqueda sin tocar la barra de estado (ej. despues de publicar o de aceptar un cupo). */
+    private void actualizarExplorar() {
+        String texto = textoBusqueda.getText();
+        trabajo(null, () -> app.busqueda()
+                        .buscar(new FiltrosBusqueda(texto, null, null, null, null, null, null, null)).getElementos(),
+                lista -> mostrarPublicaciones(lista, texto.isBlank()
+                        ? "Todas las publicaciones" : "Resultados para \"" + texto.trim() + "\"", false));
     }
 
     /* La llamada al controller corre fuera del hilo de Swing; el resultado se muestra en el hilo de Swing. */
@@ -682,6 +886,7 @@ public final class SkillSwapFrame extends JFrame {
         boolean libre = trabajosEnCurso == 0;
         bloqueables.forEach(c -> c.setEnabled(libre));
         habilitarAcciones();
+        habilitarAccionesPublicacion();
         setCursor(libre ? Cursor.getDefaultCursor() : Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
     }
 
@@ -751,6 +956,48 @@ public final class SkillSwapFrame extends JFrame {
         });
         acciones.put(boton, estados);
         panel.add(boton);
+    }
+
+    private void accionPublicacion(JPanel panel, String texto, String nombre, Set<EstadoPublicacion> estados,
+                                   Consumer<PublicacionDTO> accion) {
+        JButton boton = new JButton(texto);
+        boton.setName(nombre);
+        boton.setHorizontalAlignment(SwingConstants.LEFT);
+        boton.setEnabled(false);
+        boton.addActionListener(e -> {
+            PublicacionDTO p = publicacionPropiaSeleccionada();
+            if (p != null) {
+                accion.accept(p);
+            }
+        });
+        accionesPublicacion.put(boton, estados);
+        panel.add(boton);
+    }
+
+    private static JSpinner selectorFechaHora(Instant inicial) {
+        JSpinner selector = new JSpinner(new SpinnerDateModel(Date.from(inicial), null, null, Calendar.MINUTE));
+        selector.setEditor(new JSpinner.DateEditor(selector, "dd/MM/yyyy HH:mm"));
+        return selector;
+    }
+
+    private static Instant fechaHora(JSpinner selector) {
+        return ((Date) selector.getValue()).toInstant();
+    }
+
+    /* Valor inicial de los selectores: dentro de una semana a las 18 h (hora local). */
+    private static Instant proximaSemana() {
+        return LocalDate.now().plusDays(7).atTime(18, 0).atZone(ZoneId.systemDefault()).toInstant();
+    }
+
+    /* "java, backend ,  POO" -> {java, backend, POO} */
+    private static Set<String> etiquetas(String texto) {
+        Set<String> resultado = new LinkedHashSet<>();
+        for (String etiqueta : texto.split(",")) {
+            if (!etiqueta.isBlank()) {
+                resultado.add(etiqueta.trim());
+            }
+        }
+        return resultado;
     }
 
     private static DefaultTableModel modelo(String... columnas) {
@@ -823,6 +1070,14 @@ public final class SkillSwapFrame extends JFrame {
         c.fill = GridBagConstraints.HORIZONTAL;
         c.insets = new Insets(4, 0, 6, 0);
         panel.add(campo, c);
+    }
+
+    /* Como se muestra una categoria en el combo. */
+    private record CategoriaItem(CategoriaDTO categoria) {
+        @Override
+        public String toString() {
+            return categoria.nombre();
+        }
     }
 
     /* Como se muestra una franja en los combos. */

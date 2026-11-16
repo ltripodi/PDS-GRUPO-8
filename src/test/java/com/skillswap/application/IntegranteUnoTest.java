@@ -103,7 +103,7 @@ class IntegranteUnoTest {
                 new InMemoryOrganizacionRepository(organizacion));
 
         DatosPublicacionDTO oferta = new DatosPublicacionDTO("Revision", "Portfolio", categoria.getId(),
-                Modalidad.REMOTA, 45, 1, new SkillCoins(30), Set.of("UX"), TipoPublicacion.SERVICIO, null);
+                Modalidad.REMOTA, 45, 1, 30, Set.of("UX"), TipoPublicacion.SERVICIO, null);
         Publicacion creada = servicio.crearBorrador("profesional", oferta);
         assertThrows(SecurityException.class, () -> servicio.agregarFranja("ajeno", creada.getId(),
                 Instant.parse("2030-01-01T10:00:00Z"), Instant.parse("2030-01-01T11:00:00Z")));
@@ -114,7 +114,7 @@ class IntegranteUnoTest {
         assertTrue(creada.admiteSolicitud());
 
         DatosPublicacionDTO desafio = new DatosPublicacionDTO("Desafio", "Resolver problema", categoria.getId(),
-                Modalidad.HIBRIDA, 90, 3, new SkillCoins(100), Set.of(), TipoPublicacion.DESAFIO, organizacion.getId());
+                Modalidad.HIBRIDA, 90, 3, 100, Set.of(), TipoPublicacion.DESAFIO, organizacion.getId());
         Publicacion publicacionDeOrganizacion = servicio.crearBorrador("representante", desafio);
         servicio.agregarFranja("representante", publicacionDeOrganizacion.getId(),
                 Instant.parse("2030-01-02T10:00:00Z"), Instant.parse("2030-01-02T11:30:00Z"));
@@ -122,6 +122,16 @@ class IntegranteUnoTest {
 
         assertEquals(TipoPublicacion.DESAFIO, publicacionDeOrganizacion.getTipo());
         assertTrue(publicacionDeOrganizacion.admiteSolicitud());
+
+        // Sin organizacionId (como desde la interfaz): se usa la organizacion que representa el usuario.
+        DatosPublicacionDTO sinOrganizacion = new DatosPublicacionDTO("Otro desafio", "Resolver", categoria.getId(),
+                Modalidad.REMOTA, 60, 2, 50, Set.of(), TipoPublicacion.DESAFIO, null);
+        assertEquals(organizacion, servicio.crearBorrador("representante", sinOrganizacion).getOrganizacion());
+        assertThrows(SecurityException.class, () -> servicio.crearBorrador("profesional", sinOrganizacion),
+                "un perfil que no representa a una organizacion no publica desafios");
+        assertThrows(IllegalArgumentException.class, () -> servicio.crearBorrador("profesional",
+                new DatosPublicacionDTO("Gratis", "x", categoria.getId(), Modalidad.REMOTA, 30, 1, -5, Set.of(),
+                        TipoPublicacion.MENTORIA, null)), "el precio no puede ser negativo");
     }
 
     @Test
@@ -243,6 +253,11 @@ class IntegranteUnoTest {
         @Override
         public Optional<Organizacion> buscarPorId(UUID id) {
             return organizacion.getId().equals(id) ? Optional.of(organizacion) : Optional.empty();
+        }
+
+        @Override
+        public Optional<Organizacion> buscarPorUserIdAutorizado(String userId) {
+            return organizacion.autoriza(userId) ? Optional.of(organizacion) : Optional.empty();
         }
     }
 

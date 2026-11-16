@@ -52,21 +52,19 @@ public class PublicacionService {
         Categoria categoria = obtenerCategoria(datos.getCategoriaId());
         Publicacion publicacion;
 
+        SkillCoins precio = new SkillCoins(datos.getPrecioBase());
+
         if (datos.getTipo() == TipoPublicacion.DESAFIO) {
-            if (datos.getOrganizacionId() == null) {
-                throw new IllegalArgumentException("Un desafio requiere una organizacion autora");
-            }
-            Organizacion organizacion = organizacionRepository.buscarPorId(datos.getOrganizacionId())
-                    .orElseThrow(() -> new IllegalArgumentException("No existe la organizacion indicada"));
+            Organizacion organizacion = organizacionAutora(userId, datos.getOrganizacionId());
             if (!organizacion.autoriza(userId)) {
                 throw new SecurityException("El usuario no puede publicar por esa organizacion");
             }
             publicacion = Publicacion.crearDesafio(organizacion, datos.getTitulo(), datos.getDescripcion(), categoria,
-                    datos.getModalidad(), datos.getPrecioBase(), datos.getDuracionMinutos(), datos.getCupo());
+                    datos.getModalidad(), precio, datos.getDuracionMinutos(), datos.getCupo());
         } else {
             Perfil perfil = obtenerPerfilActivo(userId);
             publicacion = Publicacion.crearOferta(perfil, datos.getTipo(), datos.getTitulo(), datos.getDescripcion(),
-                    categoria, datos.getModalidad(), datos.getPrecioBase(), datos.getDuracionMinutos(), datos.getCupo());
+                    categoria, datos.getModalidad(), precio, datos.getDuracionMinutos(), datos.getCupo());
         }
         publicacion.actualizarEtiquetas(datos.getEtiquetas());
         publicacionRepository.guardar(publicacion);
@@ -84,7 +82,7 @@ public class PublicacionService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No existe la categoria indicada"));
         return crearBorrador(userId, new DatosPublicacionDTO(titulo, descripcion, categoria.getId(), modalidad,
-                duracionMinutos, 1, new com.skillswap.domain.compartido.SkillCoins(precio), Set.of(),
+                duracionMinutos, 1, precio, Set.of(),
                 TipoPublicacion.MENTORIA, null));
     }
 
@@ -93,7 +91,7 @@ public class PublicacionService {
         Publicacion publicacion = obtenerPublicacion(id);
         validarPermiso(userId, publicacion);
         Categoria categoria = obtenerCategoria(datos.getCategoriaId());
-        publicacion.editarDatos(datos.getTitulo(), datos.getDescripcion(), datos.getPrecioBase());
+        publicacion.editarDatos(datos.getTitulo(), datos.getDescripcion(), new SkillCoins(datos.getPrecioBase()));
         publicacion.cambiarClasificacion(categoria, datos.getModalidad());
         publicacion.configurarCapacidad(datos.getDuracionMinutos(), datos.getCupo());
         publicacion.actualizarEtiquetas(datos.getEtiquetas());
@@ -153,6 +151,17 @@ public class PublicacionService {
         }
     }
 
+    /* La indicada o, si no se indico, la que representa el usuario. */
+    private Organizacion organizacionAutora(String userId, UUID organizacionId) {
+        if (organizacionId != null) {
+            return organizacionRepository.buscarPorId(organizacionId)
+                    .orElseThrow(() -> new IllegalArgumentException("No existe la organizacion indicada"));
+        }
+        return organizacionRepository.buscarPorUserIdAutorizado(userId)
+                .orElseThrow(() -> new SecurityException(
+                        "Solo el representante de una organizacion puede publicar un desafio"));
+    }
+
     private Publicacion obtenerPublicacion(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("El id de publicacion es obligatorio");
@@ -181,7 +190,7 @@ public class PublicacionService {
     }
 
     private static void validarDatos(DatosPublicacionDTO datos) {
-        if (datos == null || datos.getTipo() == null || datos.getModalidad() == null || datos.getPrecioBase() == null) {
+        if (datos == null || datos.getTipo() == null || datos.getModalidad() == null) {
             throw new IllegalArgumentException("Los datos obligatorios de la publicacion no fueron informados");
         }
     }

@@ -651,7 +651,7 @@ class PersistenciaTest {
                 Modalidad.REMOTA,
                 60,
                 1,
-                new SkillCoins(100),
+                100,
                 Set.of("Java"),
                 TipoPublicacion.DESAFIO,
                 organizacion.getId()

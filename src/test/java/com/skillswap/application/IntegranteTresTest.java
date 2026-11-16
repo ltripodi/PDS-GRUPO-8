@@ -12,6 +12,7 @@ import com.skillswap.application.contratacion.RegistroHistorialDTO;
 import com.skillswap.application.evento.PublicadorEventosPort;
 import com.skillswap.application.pagos.PagoService;
 import com.skillswap.application.perfil.PerfilRepository;
+import com.skillswap.application.publicacion.OrganizacionRepository;
 import com.skillswap.application.publicacion.PublicacionRepository;
 import com.skillswap.domain.compartido.RegistroTransicion;
 import com.skillswap.domain.compartido.SkillCoins;
@@ -26,6 +27,7 @@ import com.skillswap.domain.perfil.Perfil;
 import com.skillswap.domain.publicacion.Categoria;
 import com.skillswap.domain.publicacion.FranjaHoraria;
 import com.skillswap.domain.publicacion.Modalidad;
+import com.skillswap.domain.publicacion.Organizacion;
 import com.skillswap.domain.publicacion.Publicacion;
 import com.skillswap.domain.publicacion.TipoPublicacion;
 import com.skillswap.presentation.controller.ContratacionController;
@@ -355,7 +357,20 @@ class IntegranteTresTest {
             perfiles.guardar(cliente);
             perfiles.guardar(proveedor);
             servicio = new ContratacionService(contrataciones, new UnaPublicacionRepository(publicacion), perfiles,
-                    id -> Optional.empty(), Runnable::run, eventos, pagos, politica);
+                    new SinOrganizaciones(), Runnable::run, eventos, pagos, politica);
+        }
+    }
+
+    /* Estos escenarios no tienen desafios: no hay organizaciones. */
+    private static final class SinOrganizaciones implements OrganizacionRepository {
+        @Override
+        public Optional<Organizacion> buscarPorId(UUID id) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Organizacion> buscarPorUserIdAutorizado(String userId) {
+            return Optional.empty();
         }
     }
 

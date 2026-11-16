@@ -15,4 +15,14 @@ public class JpaOrganizacionRepository extends SimpleJpaRepository<Organizacion,
     public Optional<Organizacion> buscarPorId(UUID id) {
         return buscarEntidadPorId(id);
     }
+
+    @Override
+    public Optional<Organizacion> buscarPorUserIdAutorizado(String userId) {
+        return JPAUtil.consultar(em -> em
+                .createQuery("SELECT o FROM Organizacion o WHERE o.userIdAutorizado = :userId", Organizacion.class)
+                .setParameter("userId", userId)
+                .setMaxResults(1)
+                .getResultStream()
+                .findFirst());
+    }
 }

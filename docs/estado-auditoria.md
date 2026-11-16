@@ -8,6 +8,8 @@
 
 - `SkillSwapApplication` (raíz): tiene el `main` y es el composition root, el único lugar que arma repositorios, servicios y controllers.
 - `presentation/ui/SkillSwapFrame`: ventana Swing con las pestañas Explorar, Mis contrataciones, Billetera, Notificaciones y Mi perfil. Tiene login simulado y un botón de demo guiada.
+- Gestión de publicaciones (4.2) desde **Mi perfil**: nueva publicación (oferta o desafío, con primera franja y publicar opcionales), agregar franja, publicar, pausar, cerrar y cancelar.
+- `DatosPublicacionDTO` recibe el precio como `int` (la interfaz no usa `SkillCoins`). En un desafío sin `organizacionId`, el servicio usa la organización que representa el usuario.
 - `presentation/consola/ConsolaSkillSwap`: la misma funcionalidad por consola (`--consola`).
 - Paquetes reorganizados por capa y por funcionalidad (ver `docs/arquitectura.md`).
 - `README`: instrucciones para ejecutar (`mvn compile exec:java`) y credenciales por `-D`.
