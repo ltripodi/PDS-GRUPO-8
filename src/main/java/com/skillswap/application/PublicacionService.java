@@ -30,6 +30,18 @@ public class PublicacionService {
         return publicacionRepository.listarPropias(userId);
     }
 
+    /* Para los controllers: la interfaz recibe PublicacionDTO, nunca la entidad. */
+    public PublicacionDTO aDTO(Publicacion publicacion) {
+        Perfil autor = publicacion.getOrganizacion() != null ? null
+                : perfilRepository.buscarPorId(publicacion.getAutorId()).orElse(null);
+        return PublicacionMapper.convertir(publicacion, autor);
+    }
+
+    public List<PublicacionDTO> aDTOs(List<Publicacion> publicaciones) {
+        return PublicacionMapper.convertir(publicaciones,
+                perfilRepository.buscarPorIds(PublicacionMapper.idsDeAutores(publicaciones)));
+    }
+
     public Publicacion crearBorrador(String userId, DatosPublicacionDTO datos) {
         validarUserId(userId);
         validarDatos(datos);

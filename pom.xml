@@ -63,6 +63,21 @@
 
     <build>
         <plugins>
+            <!-- mvn compile exec:java -> abre la consola de la demo (composition root en ContenedorAplicacion) -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <mainClass>com.skillswap.presentation.ConsolaSkillSwap</mainClass>
+                    <systemProperties>
+                        <systemProperty>
+                            <key>net.bytebuddy.experimental</key>
+                            <value>true</value>
+                        </systemProperty>
+                    </systemProperties>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

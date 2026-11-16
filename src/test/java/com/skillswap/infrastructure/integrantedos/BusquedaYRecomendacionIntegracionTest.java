@@ -63,7 +63,7 @@ class BusquedaYRecomendacionIntegracionTest {
             List.of(new RecomendacionPorHabilidades(), new RecomendacionPorPopularidad()),
             publicaciones, perfiles, new JpaSolicitudRepository(), Duration.ofDays(7));
     private final BusquedaController controller =
-            new BusquedaController(new BusquedaService(publicaciones, perfiles), recomendacion);
+            new BusquedaController(new BusquedaService(publicaciones, perfiles));
 
     private final Categoria categoria = persistir(new Categoria("cat-" + UUID.randomUUID()));
 

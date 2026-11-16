@@ -8,8 +8,67 @@ El proyecto usa Maven y separa el código por capas dentro de `com.skillswap`:
 - `domain`: entidades y reglas de negocio.
 - `application`: casos de uso y servicios de aplicación.
 - `infrastructure`: persistencia e integraciones externas.
-- `controllers`: adaptadores de entrada.
-- `presentation`: vistas o interfaces de usuario.
+- `controllers`: adaptadores de entrada. Reciben y devuelven solo DTOs, y todo error sale como `ErrorAplicacion` (con tipo `DATOS_INVALIDOS`, `SIN_PERMISO`, `ESTADO_INVALIDO`, `CONFLICTO` o `ERROR_INTERNO`).
+- `presentation`: la consola de la demo (`ConsolaSkillSwap`, con el `main`) y el composition root (`ContenedorAplicacion`), que es el único lugar que arma repositorios JPA, servicios y controllers.
+
+## Cómo ejecutar la aplicación
+
+### Requisitos
+
+- JDK 17 o superior.
+- Maven 3.9 o superior, o un IDE con soporte Maven (IntelliJ, Eclipse).
+- MySQL 8 corriendo en `localhost:3306`. La base no hace falta crearla: la crea la aplicación.
+
+### Pasos
+
+1. Clonar el repositorio y pararse en la carpeta del proyecto.
+2. Si tu MySQL no usa `root` / `root`, pasá tus credenciales con `-D` (no hace falta editar ningún archivo).
+3. Arrancar la consola:
+
+   ```bash
+   mvn compile exec:java
+   ```
+
+   Con otras credenciales:
+
+   ```bash
+   mvn compile exec:java -Djakarta.persistence.jdbc.user=miusuario -Djakarta.persistence.jdbc.password=miclave
+   ```
+
+   Desde el IDE: ejecutar `com.skillswap.presentation.ConsolaSkillSwap` con la opción de VM `-Dnet.bytebuddy.experimental=true`.
+4. Al arrancar, Flyway crea las tablas y carga los datos demo (V1 a V4). La primera vez tarda unos segundos.
+5. Iniciar sesión con un usuario demo (es un login simulado, sin clave):
+
+   | userId | Rol en la demo |
+   |---|---|
+   | `ana` | Mentora Java. Proveedora de 3 publicaciones (una en borrador). |
+   | `carla` | Fotógrafa y diseñadora UX. Proveedora de 2 publicaciones. |
+   | `bruno` | Cliente con 1000 SkillCoins. |
+   | `diego` | Cliente con 100 SkillCoins: no le alcanza para la mentoría de 150. |
+   | `acme-admin` | Representante de la organización Acme Software (autora de un desafío). |
+
+### Demo guiada
+
+La opción **D** del menú recorre el flujo completo y muestra cada paso:
+
+1. Bruno busca y solicita la mentoría de Ana.
+2. Ana acepta (State y Observer).
+3. Diego intenta pagar sin saldo y se rechaza.
+4. Bruno paga con SkillCoins.
+5. Ana inicia y completa la sesión.
+6. Bruno califica a Ana (la reputación pasa a 5) y no puede calificarla dos veces.
+7. Se muestran el historial de transiciones y las notificaciones (bandeja interna y mocks de email y push).
+
+Cada corrida ocupa un lugar de la franja. Para volver a los datos iniciales, borrá la base y volvé a arrancar:
+
+```sql
+DROP DATABASE skillswap;
+```
+
+### Opciones útiles
+
+- Ver el SQL que genera Hibernate: agregar `-Dhibernate.show_sql=true`.
+- Correr los tests: `mvn test`. Usan H2 en memoria y no necesitan MySQL.
 
 ## Base de datos
 
@@ -23,5 +82,5 @@ El proyecto usa Maven y separa el código por capas dentro de `com.skillswap`:
 - Flyway anota en la tabla `flyway_schema_history` qué versiones aplicó, así que cada script corre una sola vez. Para cambiar el esquema se agrega `V5__descripcion.sql`; nunca se edita un script ya aplicado.
 - **Si ya tenías la base creada por Hibernate** (antes de Flyway), borrala una vez para que Flyway la arme de cero: `DROP DATABASE skillswap;`
 - Para volver a los datos demo originales: borrá la base y volvé a arrancar.
-- Usuario/clave por defecto: `root` / `root`. Ajustarlos en `persistence.xml` si tu MySQL local usa otros.
+- Usuario/clave por defecto: `root` / `root`. Si tu MySQL local usa otros, pasalos con `-Djakarta.persistence.jdbc.user=...` y `-Djakarta.persistence.jdbc.password=...` (ver "Cómo ejecutar la aplicación").
 - `mvn test` corre los tests de persistencia contra H2 en memoria (no necesita MySQL).

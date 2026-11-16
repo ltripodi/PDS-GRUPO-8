@@ -33,7 +33,8 @@
             <property name="jakarta.persistence.jdbc.driver"
                       value="com.mysql.cj.jdbc.Driver"/>
 
-            <!-- La base se crea sola si no existe. Ajustar usuario/clave a la MySQL local de cada integrante. -->
+            <!-- La base se crea sola si no existe. Usuario/clave por defecto root/root: cada integrante los pisa
+                 sin editar este archivo con -Djakarta.persistence.jdbc.user=... y -Djakarta.persistence.jdbc.password=... -->
             <property name="jakarta.persistence.jdbc.url"
                       value="jdbc:mysql://localhost:3306/skillswap?createDatabaseIfNotExist=true&amp;serverTimezone=UTC"/>
 
@@ -54,8 +55,9 @@
             <property name="hibernate.default_batch_fetch_size"
                       value="50"/>
 
+            <!-- Apagado para que la consola de la demo sea legible. Para ver el SQL: -Dhibernate.show_sql=true -->
             <property name="hibernate.show_sql"
-                      value="true"/>
+                      value="false"/>
 
             <property name="hibernate.format_sql"
                       value="true"/>

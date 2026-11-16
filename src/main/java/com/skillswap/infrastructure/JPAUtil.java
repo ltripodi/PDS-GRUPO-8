@@ -36,7 +36,8 @@ public class JPAUtil {
             "jakarta.persistence.jdbc.user",
             "jakarta.persistence.jdbc.password",
             "hibernate.dialect",
-            "hibernate.hbm2ddl.auto"
+            "hibernate.hbm2ddl.auto",
+            "hibernate.show_sql"
     };
 
     private static final EntityManagerFactory ENTITY_MANAGER_FACTORY = crearFactory();

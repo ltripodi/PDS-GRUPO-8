@@ -317,6 +317,7 @@ public class ContratacionService {
                 contratacion.getId(),
                 contratacion.getSolicitud().getPublicacion().getTitulo(),
                 nombreDe(contraparteId),
+                userIdDe(contraparteId),
                 LocalDateTime.ofInstant(contratacion.getSolicitud().getFechaCreacion(), ZoneId.systemDefault()),
                 contratacion.getPrecio().getValor(),
                 EstadoContratacionDTO.valueOf(contratacion.getEstado())
@@ -337,5 +338,12 @@ public class ContratacionService {
                 .map(Perfil::getNombreVisible)
                 .or(() -> organizaciones.buscarPorId(parteId).map(Organizacion::getNombre))
                 .orElse("Desconocido");
+    }
+
+    private String userIdDe(UUID parteId) {
+        return perfiles.buscarPorId(parteId)
+                .map(Perfil::getUserId)
+                .or(() -> organizaciones.buscarPorId(parteId).map(Organizacion::getUserIdAutorizado))
+                .orElse(null);
     }
 }

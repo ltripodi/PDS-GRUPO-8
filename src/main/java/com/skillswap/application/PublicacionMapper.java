@@ -1,8 +1,10 @@
 package com.skillswap.application;
 
+import com.skillswap.domain.FranjaHoraria;
 import com.skillswap.domain.Perfil;
 import com.skillswap.domain.Publicacion;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,7 +50,11 @@ public final class PublicacionMapper {
                 autor != null ? autor.getReputacion() : 0,
                 nombreDelProveedor(publicacion, autor),
                 publicacion.getEtiquetas().stream().sorted().toList(),
-                publicacion.getEstado());
+                publicacion.getEstado(),
+                publicacion.getFranjas().stream()
+                        .sorted(Comparator.comparing(FranjaHoraria::getInicio))
+                        .map(f -> new FranjaDTO(f.getId(), f.getInicio(), f.getFin(), f.getCupo() - f.getOcupados()))
+                        .toList());
     }
 
     private static String nombreDelProveedor(Publicacion publicacion, Perfil autor) {

@@ -12,6 +12,7 @@ import com.skillswap.application.PublicacionRepository;
 import com.skillswap.application.RecomendacionService;
 import com.skillswap.application.SolicitudRepository;
 import com.skillswap.controllers.BusquedaController;
+import com.skillswap.controllers.RecomendacionController;
 import com.skillswap.domain.Calificacion;
 import com.skillswap.domain.Categoria;
 import com.skillswap.domain.EstrategiaRecomendacion;
@@ -267,17 +268,16 @@ class BusquedaYRecomendacionTest {
     }
 
     @Nested
-    @DisplayName("BusquedaController")
+    @DisplayName("BusquedaController y RecomendacionController")
     class Controller {
 
         @Test
         void sinPaginaDevuelveLaPrimeraConElTamanioPorDefecto() {
             nuevoPerfil("cliente", java);
             nuevaOferta(nuevoPerfil("proveedor"), "Oferta", 50, java);
-            BusquedaController controller = nuevoController();
 
-            Pagina<PublicacionDTO> encontradas = controller.buscar(sinFiltros());
-            Pagina<PublicacionDTO> recomendadas = controller.recomendar("cliente");
+            Pagina<PublicacionDTO> encontradas = nuevoController().buscar(sinFiltros());
+            Pagina<PublicacionDTO> recomendadas = new RecomendacionController(nuevoServicio()).recomendar("cliente");
 
             assertEquals(0, encontradas.getNumero());
             assertEquals(20, encontradas.getTamanio());
@@ -287,12 +287,13 @@ class BusquedaYRecomendacionTest {
         @Test
         void validaLaEntrada() {
             BusquedaController controller = nuevoController();
+            RecomendacionController recomendaciones = new RecomendacionController(nuevoServicio());
 
             assertThrows(ErrorAplicacion.class, () -> controller.buscar(null));
             assertThrows(ErrorAplicacion.class, () -> controller.buscar(sinFiltros(), -1, 10));
             assertThrows(ErrorAplicacion.class, () -> controller.buscar(sinFiltros(), 0, 0));
-            assertThrows(ErrorAplicacion.class, () -> controller.recomendar(" "));
-            assertThrows(ErrorAplicacion.class, () -> controller.recomendar("cliente", null, 0, 10));
+            assertThrows(ErrorAplicacion.class, () -> recomendaciones.recomendar(" "));
+            assertThrows(ErrorAplicacion.class, () -> recomendaciones.recomendar("cliente", null, 0, 10));
         }
     }
 
@@ -342,7 +343,7 @@ class BusquedaYRecomendacionTest {
     }
 
     private BusquedaController nuevoController() {
-        return new BusquedaController(nuevaBusqueda(), nuevoServicio());
+        return new BusquedaController(nuevaBusqueda());
     }
 
     private static List<UUID> ids(Pagina<PublicacionDTO> pagina) {

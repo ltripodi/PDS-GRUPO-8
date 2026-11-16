@@ -12,9 +12,17 @@ public class ContratacionDTO {
     private final LocalDateTime fecha;
     private final int precio;
     private final EstadoContratacionDTO estado;
+    /* userId de la otra parte: lo necesita la UI para calificarla. */
+    private final String contraparteUserId;
 
     public ContratacionDTO(UUID id, String titulo, String contraparte, LocalDateTime fecha,
                            int precio, EstadoContratacionDTO estado) {
+        this(id, titulo, contraparte, null, fecha, precio, estado);
+    }
+
+    public ContratacionDTO(UUID id, String titulo, String contraparte, String contraparteUserId,
+                           LocalDateTime fecha, int precio, EstadoContratacionDTO estado) {
+        this.contraparteUserId = contraparteUserId;
         this.id = id;
         this.titulo = titulo;
         this.contraparte = contraparte;
@@ -33,6 +41,10 @@ public class ContratacionDTO {
 
     public String getContraparte() {
         return contraparte;
+    }
+
+    public String getContraparteUserId() {
+        return contraparteUserId;
     }
 
     public LocalDateTime getFecha() {

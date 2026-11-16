@@ -19,10 +19,19 @@ public class PublicacionDTO {
     private final String proveedor;
     private final List<String> etiquetas;
     private final EstadoPublicacion estado;
+    private final List<FranjaDTO> franjas;
 
     public PublicacionDTO(UUID id, String titulo, String descripcion, String categoria, Modalidad modalidad,
                           int duracionMinutos, int precio, double reputacion, String proveedor,
                           List<String> etiquetas, EstadoPublicacion estado) {
+        this(id, titulo, descripcion, categoria, modalidad, duracionMinutos, precio, reputacion, proveedor,
+                etiquetas, estado, List.of());
+    }
+
+    public PublicacionDTO(UUID id, String titulo, String descripcion, String categoria, Modalidad modalidad,
+                          int duracionMinutos, int precio, double reputacion, String proveedor,
+                          List<String> etiquetas, EstadoPublicacion estado, List<FranjaDTO> franjas) {
+        this.franjas = franjas == null ? List.of() : List.copyOf(franjas);
         this.id = id;
         this.titulo = titulo;
         this.descripcion = descripcion;
@@ -78,5 +87,9 @@ public class PublicacionDTO {
 
     public EstadoPublicacion getEstado() {
         return estado;
+    }
+
+    public List<FranjaDTO> getFranjas() {
+        return franjas;
     }
 }
