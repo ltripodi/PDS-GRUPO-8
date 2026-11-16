@@ -50,14 +50,35 @@ public class Billetera {
     }
 
     public void debitar(SkillCoins monto) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (monto == null) {
+            throw new IllegalArgumentException("El monto es obligatorio");
+        }
+        int nuevo = this.saldo.getValor() - monto.getValor();
+        if (nuevo < 0) {
+            throw new IllegalStateException("Saldo insuficiente");
+        }
+        this.saldo = new SkillCoins(nuevo);
+        this.movimientos.add(new Movimiento(this.titularId, monto, "DEBITO"));
     }
 
     public void acreditar(SkillCoins monto) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (monto == null) {
+            throw new IllegalArgumentException("El monto es obligatorio");
+        }
+        this.saldo = new SkillCoins(this.saldo.getValor() + monto.getValor());
+        this.movimientos.add(new Movimiento(this.titularId, monto, "CREDITO"));
     }
 
     public SkillCoins consultarSaldo() {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return this.saldo;
+    }
+
+    /** Reintegro: mismo efecto que acreditar, con tipo propio para auditoría. */
+    public void reintegrar(SkillCoins monto) {
+        if (monto == null) {
+            throw new IllegalArgumentException("El monto es obligatorio");
+        }
+        this.saldo = new SkillCoins(this.saldo.getValor() + monto.getValor());
+        this.movimientos.add(new Movimiento(this.titularId, monto, "REINTEGRO"));
     }
 }

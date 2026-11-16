@@ -7,21 +7,26 @@ import com.skillswap.domain.Movimiento;
 import java.util.List;
 
 public class WalletController {
-    private WalletService walletService;
+
+    private final WalletService walletService;
+
+    public WalletController(WalletService walletService) {
+        this.walletService = walletService;
+    }
 
     public int consultarSaldo(String userId) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return walletService.consultarSaldo(userId);
     }
 
     public List<Movimiento> listarMovimientos(String userId) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return walletService.listarMovimientos(userId);
     }
 
     public int acreditarDemo(String userId, int importe) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return walletService.acreditarDemo(userId, importe);
     }
 
     public Pagina<Movimiento> listarMovimientosPaginado(String userId, int pagina, int tamanio) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        return walletService.listarMovimientosPaginado(userId, pagina, tamanio);
     }
 }

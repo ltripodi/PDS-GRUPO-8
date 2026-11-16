@@ -36,6 +36,13 @@ public class Promocion {
     }
 
     public SkillCoins aplicar(SkillCoins monto) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (monto == null) {
+            throw new IllegalArgumentException("El monto es obligatorio");
+        }
+        int restante = monto.getValor() - this.descuento.getValor();
+        if (restante < 0) {
+            restante = 0;
+        }
+        return new SkillCoins(restante);
     }
 }

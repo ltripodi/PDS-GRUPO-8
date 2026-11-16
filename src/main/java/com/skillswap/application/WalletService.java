@@ -1,26 +1,67 @@
 package com.skillswap.application;
 
+import com.skillswap.domain.Billetera;
 import com.skillswap.domain.Movimiento;
+import com.skillswap.domain.SkillCoins;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class WalletService {
-    private BilleteraRepository billeteras;
-    private UnidadTransaccional transacciones;
+
+    private final BilleteraRepository billeteras;
+    private final UnidadTransaccional transacciones;
+
+    public WalletService(BilleteraRepository billeteras, UnidadTransaccional transacciones) {
+        this.billeteras = billeteras;
+        this.transacciones = transacciones;
+    }
 
     public int consultarSaldo(String userId) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        validarUserId(userId);
+        Billetera billetera = billeteras.buscarPorTitular(userId);
+        return billetera == null ? 0 : billetera.consultarSaldo().getValor();
     }
 
     public List<Movimiento> listarMovimientos(String userId) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        validarUserId(userId);
+        return billeteras.listarMovimientos(userId);
     }
 
     public int acreditarDemo(String userId, int importe) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        validarUserId(userId);
+        if (importe <= 0) {
+            throw new IllegalArgumentException("El importe debe ser positivo");
+        }
+        AtomicReference<Integer> resultado = new AtomicReference<>();
+
+        transacciones.ejecutar(() -> {
+            Billetera billetera = billeteras.buscarPorTitular(userId);
+            if (billetera == null) {
+                billetera = new Billetera(userId);
+            }
+            billetera.acreditar(new SkillCoins(importe));
+            billeteras.guardar(billetera);
+            resultado.set(billetera.consultarSaldo().getValor());
+        });
+
+        return resultado.get();
     }
 
     public Pagina<Movimiento> listarMovimientosPaginado(String userId, int pagina, int tamanio) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        validarUserId(userId);
+        if (pagina < 0 || tamanio <= 0) {
+            throw new IllegalArgumentException("La página debe ser >= 0 y el tamaño > 0");
+        }
+        List<Movimiento> todos = listarMovimientos(userId);
+        int desde = Math.min(pagina * tamanio, todos.size());
+        int hasta = Math.min(desde + tamanio, todos.size());
+        return new Pagina<>(todos.subList(desde, hasta), pagina, tamanio, todos.size());
+    }
+
+    private void validarUserId(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("El userId es obligatorio");
+        }
     }
 }

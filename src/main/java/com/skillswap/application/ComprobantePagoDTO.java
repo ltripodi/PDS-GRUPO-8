@@ -5,8 +5,31 @@ import java.util.UUID;
 
 /** DTO. */
 public class ComprobantePagoDTO {
-    private UUID pagoId;
-    private UUID contratacionId;
-    private int total;
-    private Instant fecha;
+    private final UUID pagoId;
+    private final UUID contratacionId;
+    private final int total;
+    private final Instant fecha;
+
+    public ComprobantePagoDTO(UUID pagoId, UUID contratacionId, int total, Instant fecha) {
+        this.pagoId = pagoId;
+        this.contratacionId = contratacionId;
+        this.total = total;
+        this.fecha = fecha;
+    }
+
+    public UUID getPagoId() {
+        return pagoId;
+    }
+
+    public UUID getContratacionId() {
+        return contratacionId;
+    }
+
+    public int getTotal() {
+        return total;
+    }
+
+    public Instant getFecha() {
+        return fecha;
+    }
 }

@@ -72,6 +72,13 @@ public class Pago {
     }
 
     public void registrarReintegro(SkillCoins monto) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (monto == null) {
+            throw new IllegalArgumentException("El monto del reintegro es obligatorio");
+        }
+        int nuevoAcumulado = this.totalReintegrado.getValor() + monto.getValor();
+        if (nuevoAcumulado > this.total.getValor()) {
+            throw new IllegalStateException("El reintegro supera el total pagado");
+        }
+        this.totalReintegrado = new SkillCoins(nuevoAcumulado);
     }
 }

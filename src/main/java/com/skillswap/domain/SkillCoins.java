@@ -22,10 +22,19 @@ public class SkillCoins {
     }
 
     public SkillCoins sumar(SkillCoins otro) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (otro == null) {
+            throw new IllegalArgumentException("El monto es obligatorio");
+        }
+        return new SkillCoins(this.valor + otro.valor);
     }
 
     public SkillCoins restar(SkillCoins otro) {
-        throw new UnsupportedOperationException("Pendiente de implementar");
+        if (otro == null) {
+            throw new IllegalArgumentException("El monto es obligatorio");
+        }
+        if (otro.valor > this.valor) {
+            throw new IllegalStateException("Saldo insuficiente");
+        }
+        return new SkillCoins(this.valor - otro.valor);
     }
 }
