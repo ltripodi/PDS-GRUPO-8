@@ -27,7 +27,7 @@ import java.util.UUID;
  */
 public final class ConsolaSkillSwap {
 
-    private static final List<String> USUARIOS_DEMO = List.of("ana", "bruno", "carla", "diego", "acme-admin");
+    private static final List<String> USUARIOS_DEMO = List.of("ana", "bruno", "carla", "diego", "uade-admin");
     private static final DateTimeFormatter FORMATO = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
             .withZone(ZoneId.systemDefault());
 

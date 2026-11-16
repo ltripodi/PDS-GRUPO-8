@@ -46,7 +46,7 @@ El proyecto usa Maven y organiza `com.skillswap` por capas. Dentro de cada capa,
    ```
 
    Desde el IDE: ejecutar `com.skillswap.SkillSwapApplication` con la opción de VM `-Dnet.bytebuddy.experimental=true`.
-4. Al arrancar, Flyway crea las tablas y carga los datos demo (V1 a V5). La primera vez tarda unos segundos.
+4. Al arrancar, Flyway crea las tablas y carga los datos demo (V1 a V6). La primera vez tarda unos segundos.
 5. Elegir un usuario demo en el selector de arriba a la derecha (es un login simulado, sin clave):
 
    | userId | Rol en la demo |
@@ -55,7 +55,7 @@ El proyecto usa Maven y organiza `com.skillswap` por capas. Dentro de cada capa,
    | `carla` | Fotógrafa y diseñadora UX. Proveedora de 2 publicaciones. |
    | `bruno` | Cliente con 1000 SkillCoins. |
    | `diego` | Cliente con 100 SkillCoins: no le alcanza para la mentoría de 150. |
-   | `acme-admin` | Representante de la organización Acme Software (autora de un desafío). |
+   | `uade-admin` | Representante de la organización Acme Software: publica desafíos y no tiene perfil. |
 
 ### Demo guiada
 
@@ -86,7 +86,7 @@ DROP DATABASE skillswap;
 - El mapeo objeto-relacional está en `src/main/resources/META-INF/orm.xml`, no en anotaciones: las clases de `domain` no conocen JPA (Clean Architecture). Si se agrega un atributo con columna especial, una relación o una entidad nueva, se mapea ahí.
 - La base `skillswap` se crea sola (`createDatabaseIfNotExist=true`). Las tablas **no** las crea Hibernate (`hbm2ddl.auto=none`): las crea **Flyway** al arrancar, con las migraciones de `src/main/resources/db/migration`:
   - `V1__esquema_inicial.sql`: todas las tablas, claves e índices.
-  - `V2__datos_demo.sql`: datos de demostración (usuarios `ana`, `carla`, `bruno`, `diego` y `acme-admin`; el detalle está en el encabezado del script).
+  - `V2__datos_demo.sql`: datos de demostración (usuarios `ana`, `carla`, `bruno`, `diego` y el representante de la organización, que V6 renombra a `uade-admin`; el detalle está en el encabezado del script).
   - `V3__eliminar_registro_estado_publicacion.sql`: borra una tabla que no se usaba (ejemplo de cómo se cambia el esquema sin tocar V1).
   - `V4__version_billeteras.sql`: agrega la columna `version` a `billeteras` (optimistic locking: dos pagos simultáneos no se pisan el saldo).
   - `V5__integridad_y_concurrencia.sql`:
@@ -94,7 +94,8 @@ DROP DATABASE skillswap;
     - Claves foráneas que faltaban: cliente de contrataciones y solicitudes, franja de solicitudes y propuestas.
     - CHECKs de saldo no negativo y de `ocupados <= cupo`.
     - Índices de las consultas frecuentes.
-- Flyway anota en la tabla `flyway_schema_history` qué versiones aplicó, así que cada script corre una sola vez. Para cambiar el esquema se agrega `V6__descripcion.sql`; nunca se edita un script ya aplicado.
+  - `V6__usuario_organizacion_uade.sql`: el representante de la organización pasa de `acme-admin` a `uade-admin`. Se hace con una migración nueva porque V2 ya está aplicada en las bases del grupo.
+- Flyway anota en la tabla `flyway_schema_history` qué versiones aplicó, así que cada script corre una sola vez. Para cambiar el esquema se agrega `V7__descripcion.sql`; nunca se edita un script ya aplicado.
 - **Si ya tenías la base creada por Hibernate** (antes de Flyway), borrala una vez para que Flyway la arme de cero: `DROP DATABASE skillswap;`
 - Para volver a los datos demo originales: borrá la base y volvé a arrancar.
 - Usuario/clave por defecto: `root` / `root`. Si tu MySQL local usa otros, pasalos con `-Djakarta.persistence.jdbc.user=...` y `-Djakarta.persistence.jdbc.password=...` (ver "Cómo ejecutar la aplicación").

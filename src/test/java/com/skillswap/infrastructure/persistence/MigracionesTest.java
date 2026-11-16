@@ -47,8 +47,8 @@ class MigracionesTest {
         String url = baseNueva();
 
         MigrateResult resultado = MigracionesBaseDeDatos.migrar(url, "sa", "");
-        assertEquals(5, resultado.migrationsExecuted,
-                "V1 esquema, V2 datos demo, V3 limpieza, V4 version de billeteras, V5 integridad y concurrencia");
+        assertEquals(6, resultado.migrationsExecuted, "V1 esquema, V2 datos demo, V3 limpieza, "
+                + "V4 version de billeteras, V5 integridad y concurrencia, V6 usuario de la organizacion");
         assertFalse(existeTabla(url, "registro_estado_publicacion"), "V3 la elimina");
 
         EntityManagerFactory emf = validarMapeoContra(url);
@@ -72,6 +72,9 @@ class MigracionesTest {
             assertEquals(TipoPublicacion.DESAFIO, desafio.getTipo());
             assertEquals(ACME, desafio.getAutorId());
             assertEquals("PUBLICADA", desafio.getHistorial().get(0).getDestino());
+            // V6: la organizacion la representa uade-admin, tambien en el historial
+            assertEquals("uade-admin", desafio.getOrganizacion().getUserIdAutorizado());
+            assertEquals("uade-admin", desafio.getHistorial().get(0).getActorId());
         } finally {
             em.close();
             emf.close();

@@ -119,14 +119,14 @@ class ReglasDeNegocioTest {
 
     @Test
     void elRepresentanteDeLaOrganizacionNoPuedeSolicitarSuPropioDesafio() {
-        Organizacion acme = new Organizacion("Acme", "acme-admin");
-        Perfil representante = new Perfil("acme-admin", "Admin de Acme", "", ZoneId.of("UTC"));
+        Organizacion acme = new Organizacion("Acme", "uade-admin");
+        Perfil representante = new Perfil("uade-admin", "Admin de Acme", "", ZoneId.of("UTC"));
         Publicacion desafio = Publicacion.crearDesafio(acme, "Prototipo", "desc", categoria, Modalidad.REMOTA,
                 new SkillCoins(100), 480, 3);
         Instant inicio = Instant.now().plus(5, ChronoUnit.DAYS);
         FranjaHoraria franjaDesafio = new FranjaHoraria(inicio, inicio.plus(8, ChronoUnit.HOURS), 3);
         desafio.agregarFranja(franjaDesafio);
-        desafio.publicar("acme-admin");
+        desafio.publicar("uade-admin");
 
         assertThrows(IllegalArgumentException.class,
                 () -> Solicitud.crear(representante, desafio, franjaDesafio.getId(), "", "Ganar"));

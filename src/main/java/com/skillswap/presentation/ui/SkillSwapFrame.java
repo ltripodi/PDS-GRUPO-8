@@ -55,7 +55,7 @@ import java.util.function.Supplier;
  */
 public final class SkillSwapFrame extends JFrame {
 
-    private static final List<String> USUARIOS = List.of("bruno", "ana", "carla", "diego", "acme-admin");
+    private static final List<String> USUARIOS = List.of("bruno", "ana", "carla", "diego", "uade-admin");
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
             .withZone(ZoneId.systemDefault());
     private static final DateTimeFormatter FECHA_LOCAL = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -116,7 +116,7 @@ public final class SkillSwapFrame extends JFrame {
     private final JTable tablaPropias = tabla(modeloPropias);
     private List<PublicacionDTO> propias = List.of();
     private final Map<JButton, Set<EstadoPublicacion>> accionesPublicacion = new LinkedHashMap<>();
-    /* acme-admin no tiene perfil: representa a una organizacion y publica desafios. */
+    /* uade-admin no tiene perfil: representa a una organizacion y publica desafios. */
     private boolean representaOrganizacion;
     /* El aviso de "sin perfil" se muestra al elegir el usuario, no en cada refresco. */
     private boolean avisarAlCargar;
@@ -653,7 +653,7 @@ public final class SkillSwapFrame extends JFrame {
     // Datos del usuario
     // =====================================================================================
 
-    /* Todo lo que depende del usuario se carga junto; si una parte falla (ej. acme-admin no tiene perfil), sigue. */
+    /* Todo lo que depende del usuario se carga junto; si una parte falla (ej. uade-admin no tiene perfil), sigue. */
     private record DatosUsuario(List<ContratacionDTO> contrataciones, int saldo, List<MovimientoDTO> movimientos,
                                 List<NotificacionDTO> notificaciones, PerfilPublicoDTO perfil,
                                 List<PublicacionDTO> propias, List<String> avisos) {
