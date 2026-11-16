@@ -7,6 +7,7 @@ import com.skillswap.application.perfil.PerfilPublicoDTO;
 import com.skillswap.application.publicacion.PublicacionDTO;
 import com.skillswap.presentation.contrato.Controladores;
 
+import java.io.PrintStream;
 import java.util.UUID;
 
 /*
@@ -14,7 +15,7 @@ import java.util.UUID;
  * Cada paso imprime lo que pasa; si un paso falla, se muestra el error y se sigue con el proximo.
  * Cada corrida usa un lugar de la franja: para volver al estado inicial, borrar la base (ver README).
  */
-final class DemoGuiada {
+public final class DemoGuiada {
 
     /* IDs fijos de V2: "Preparacion para entrevistas tecnicas Java" de ana (150 SkillCoins) y sus franjas. */
     private static final UUID MENTORIA_JAVA = UUID.fromString("05000000-0000-0000-0000-000000000001");
@@ -22,18 +23,25 @@ final class DemoGuiada {
     private static final UUID FRANJA_4_MARZO = UUID.fromString("06000000-0000-0000-0000-000000000002");
 
     private final Controladores app;
+    private final PrintStream out;
     private int paso;
 
     DemoGuiada(Controladores app) {
-        this.app = app;
+        this(app, System.out);
     }
 
-    void ejecutar() {
+    /* La ventana Swing la corre con su propia salida y la muestra en un dialogo. */
+    public DemoGuiada(Controladores app, PrintStream out) {
+        this.app = app;
+        this.out = out;
+    }
+
+    public void ejecutar() {
         titulo("Busqueda: bruno busca \"java\"");
         intentar(() -> {
             for (PublicacionDTO p : app.busqueda()
                     .buscar(new FiltrosBusqueda("java", null, null, null, null, null, null, null)).getElementos()) {
-                System.out.println("     - " + p.getTitulo() + " (" + p.getPrecio() + " SkillCoins, " + p.getProveedor() + ")");
+                out.println("     - " + p.getTitulo() + " (" + p.getPrecio() + " SkillCoins, " + p.getProveedor() + ")");
             }
         });
 
@@ -41,7 +49,7 @@ final class DemoGuiada {
         UUID deBruno = intentar(() -> app.contrataciones().solicitar("bruno", MENTORIA_JAVA,
                 "Hola Ana, tengo una entrevista en dos semanas", FRANJA_2_MARZO, "Practicar entrevista tecnica"));
         if (deBruno == null) {
-            System.out.println("  No se pudo seguir la demo. Borre la base para volver a los datos iniciales.");
+            out.println("  No se pudo seguir la demo. Borre la base para volver a los datos iniciales.");
             return;
         }
         estado("bruno", deBruno);
@@ -56,7 +64,7 @@ final class DemoGuiada {
         if (deDiego != null) {
             intentar(() -> app.contrataciones().aceptar("ana", deDiego));
             intentar(() -> app.contrataciones().pagar("diego", deDiego));
-            System.out.println("     saldo de diego sigue en " + app.billetera().consultarSaldo("diego"));
+            out.println("     saldo de diego sigue en " + app.billetera().consultarSaldo("diego"));
             titulo("diego cancela (no pago, no hay reintegro) y libera el lugar");
             intentar(() -> app.contrataciones().cancelar("diego", deDiego, "No me alcanza el saldo"));
             estado("diego", deDiego);
@@ -66,7 +74,7 @@ final class DemoGuiada {
         int antesBruno = app.billetera().consultarSaldo("bruno");
         int antesAna = app.billetera().consultarSaldo("ana");
         intentar(() -> app.contrataciones().pagar("bruno", deBruno));
-        System.out.println("     bruno " + antesBruno + " -> " + app.billetera().consultarSaldo("bruno")
+        out.println("     bruno " + antesBruno + " -> " + app.billetera().consultarSaldo("bruno")
                 + " | ana " + antesAna + " -> " + app.billetera().consultarSaldo("ana"));
         estado("bruno", deBruno);
 
@@ -79,7 +87,7 @@ final class DemoGuiada {
         intentar(() -> app.calificaciones().calificar("bruno", deBruno, "ana", 5));
         intentar(() -> {
             PerfilPublicoDTO ana = app.perfiles().verPerfil("ana");
-            System.out.printf("     reputacion de ana: %.1f (%d resenas)%n", ana.getReputacion(), ana.getResenas());
+            out.printf("     reputacion de ana: %.1f (%d resenas)%n", ana.getReputacion(), ana.getResenas());
         });
 
         titulo("bruno intenta calificar dos veces la misma contratacion");
@@ -88,28 +96,28 @@ final class DemoGuiada {
         titulo("Historial de transiciones de la contratacion de bruno");
         intentar(() -> {
             for (RegistroHistorialDTO r : app.contrataciones().consultarHistorial("bruno", deBruno)) {
-                System.out.println("     " + r.getOrigen() + " -> " + r.getDestino() + " por " + r.getActor()
+                out.println("     " + r.getOrigen() + " -> " + r.getDestino() + " por " + r.getActor()
                         + " (" + r.getMotivo() + ")");
             }
         });
 
         titulo("Notificaciones de bruno");
-        intentar(() -> System.out.println("     " + app.notificaciones().listar("bruno").getTotalElementos()
+        intentar(() -> out.println("     " + app.notificaciones().listar("bruno").getTotalElementos()
                 + " en su bandeja; mocks en esta ejecucion: " + app.emailsEnviados() + " emails, "
                 + app.pushEnviados() + " push"));
 
-        System.out.println("\nFin de la demo guiada.");
+        out.println("\nFin de la demo guiada.");
     }
 
     private void titulo(String texto) {
-        System.out.println("\n" + (++paso) + ". " + texto);
+        out.println("\n" + (++paso) + ". " + texto);
     }
 
     private void estado(String userId, UUID contratacionId) {
         intentar(() -> app.contrataciones().listarContrataciones(userId).stream()
                 .filter(c -> c.getId().equals(contratacionId))
                 .findFirst()
-                .ifPresent(c -> System.out.println("     estado: " + c.getEstado() + " (" + c.getPrecio() + " SkillCoins)")));
+                .ifPresent(c -> out.println("     estado: " + c.getEstado() + " (" + c.getPrecio() + " SkillCoins)")));
     }
 
     private void intentar(Runnable accion) {
@@ -123,7 +131,7 @@ final class DemoGuiada {
         try {
             return accion.get();
         } catch (ErrorAplicacion e) {
-            System.out.println("     rechazado [" + e.getTipo() + "]: " + e.getMessage());
+            out.println("     rechazado [" + e.getTipo() + "]: " + e.getMessage());
             return null;
         }
     }

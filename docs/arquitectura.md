@@ -61,7 +61,8 @@ com.skillswap
     ├── controller     Busqueda, Recomendacion, Contratacion, Calificacion, Perfil, Publicacion,
     │                  Wallet y Notificacion (*Controller) + ControllerBase
     ├── contrato       Controladores (lo que la interfaz recibe de la aplicación)
-    └── consola        ConsolaSkillSwap, DemoGuiada
+    ├── ui             SkillSwapFrame (ventana Swing, la interfaz principal)
+    └── consola        ConsolaSkillSwap, DemoGuiada (versión de consola, con --consola)
 ```
 
 ## Correcciones a la propuesta original
@@ -73,7 +74,7 @@ com.skillswap
 | `RegistroEstadoContratacion` y `RegistroEstadoPublicacion` | No existen. | El historial es `RegistroTransicion` (embebible). La tabla vieja la borró la migración V3. |
 | Faltaban clases | Se agregaron: `ErrorAplicacion`, `ConflictoConcurrenciaException`, `PromocionRepository`, `JpaPromocionRepository`, `MigracionesBaseDeDatos`, `FranjaDTO`, `MovimientoDTO`, `RecomendacionController`, `Controladores`. | — |
 | 4 patrones | Son 5: Strategy, State, Observer, Adapter y Decorator. | Decorator ya estaba conectado en `ContratacionService` para calcular el precio con promociones. |
-| `UiControllers`, `Models`, `SkillSwapView`, `*UiAdapter` (kit de UI) | Todavía no se incorporó. Hoy la interfaz es la consola, que recibe `presentation.contrato.Controladores`. | Si se suma el kit, sus adaptadores van en `presentation` y dependen solo de `Controladores` y de los DTOs. |
+| `UiControllers`, `Models`, `SkillSwapView`, `*UiAdapter` (kit de UI) | La interfaz es `presentation.ui.SkillSwapFrame` (Swing), armada con el criterio del ejemplo MagicCafe de la cátedra. | Recibe solo `Controladores` y DTOs. Cada llamada corre en un `SwingWorker` para que la ventana no se congele, y los errores se muestran según el tipo de `ErrorAplicacion`. |
 
 `orm.xml` y `persistence.xml` usan los nombres completos de las clases (por ejemplo, `com.skillswap.domain.contratacion.Contratacion`).
 

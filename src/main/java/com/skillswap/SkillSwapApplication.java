@@ -52,7 +52,16 @@ import com.skillswap.presentation.controller.PublicacionController;
 import com.skillswap.presentation.controller.RecomendacionController;
 import com.skillswap.presentation.controller.WalletController;
 
+import com.skillswap.presentation.ui.SkillSwapFrame;
+
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+import java.awt.GraphicsEnvironment;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
@@ -71,14 +80,59 @@ public final class SkillSwapApplication implements AutoCloseable {
 
     private final Controladores controladores;
 
+    /*
+     * Por defecto abre la ventana Swing. Con el argumento --consola (o sin pantalla) usa la consola.
+     * Como en el ejemplo MagicCafe, se conecta antes de abrir la ventana y fuera del hilo de Swing.
+     */
     public static void main(String[] args) {
+        boolean consola = Arrays.asList(args).contains("--consola") || GraphicsEnvironment.isHeadless();
         System.out.println("Conectando con la base y aplicando migraciones (Flyway)...");
-        try (SkillSwapApplication app = new SkillSwapApplication()) {
-            new ConsolaSkillSwap(app.controladores(), new Scanner(System.in)).ejecutar();
+        SkillSwapApplication app;
+        try {
+            app = new SkillSwapApplication();
+        } catch (RuntimeException | ExceptionInInitializerError e) {
+            if (consola) {
+                throw e;
+            }
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "No se pudo conectar con MySQL en localhost:3306.\n"
+                            + "Revisá que el servicio esté corriendo y el usuario/clave (ver README).\n\n"
+                            + causaRaiz(e).getMessage(),
+                    "SkillSwap", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+
+        if (consola) {
+            try (app) {
+                new ConsolaSkillSwap(app.controladores(), new Scanner(System.in)).ejecutar();
+            }
+            return;
+        }
+        Runtime.getRuntime().addShutdownHook(new Thread(app::close));
+        SwingUtilities.invokeLater(() -> {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (ReflectiveOperationException | UnsupportedLookAndFeelException e) {
+                // Si no se puede, queda el look and feel por defecto de Swing.
+            }
+            SkillSwapFrame ventana = new SkillSwapFrame(app.controladores());
+            ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            ventana.setVisible(true);
+        });
+    }
+
+    private static Throwable causaRaiz(Throwable e) {
+        Throwable causa = e;
+        while (causa.getCause() != null && causa.getCause() != causa) {
+            causa = causa.getCause();
+        }
+        return causa;
     }
 
     public SkillSwapApplication() {
+        // Conecta ya (y corre Flyway): si MySQL no esta, falla aca y no con la ventana abierta.
+        JPAUtil.consultar(em -> Boolean.TRUE);
+
         // Repositorios (adaptadores de salida)
         PerfilRepository perfilRepo = new JpaPerfilRepository();
         PublicacionRepository publicacionRepo = new JpaPublicacionRepository();

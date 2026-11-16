@@ -12,7 +12,8 @@ El proyecto usa Maven y organiza `com.skillswap` por capas. Dentro de cada capa,
 - `presentation`:
   - `controller`: reciben y devuelven solo DTOs, y todo error sale como `ErrorAplicacion` (con tipo `DATOS_INVALIDOS`, `SIN_PERMISO`, `ESTADO_INVALIDO`, `CONFLICTO` o `ERROR_INTERNO`).
   - `contrato`: lo que la interfaz recibe.
-  - `consola`: la interfaz de la demo.
+  - `ui`: la ventana Swing (`SkillSwapFrame`).
+  - `consola`: la versión de consola y la demo guiada.
 
 ## Cómo ejecutar la aplicación
 
@@ -26,10 +27,16 @@ El proyecto usa Maven y organiza `com.skillswap` por capas. Dentro de cada capa,
 
 1. Clonar el repositorio y pararse en la carpeta del proyecto.
 2. Si tu MySQL no usa `root` / `root`, pasá tus credenciales con `-D` (no hace falta editar ningún archivo).
-3. Arrancar la consola:
+3. Arrancar la aplicación. Se abre la ventana de SkillSwap (Swing):
 
    ```bash
    mvn compile exec:java
+   ```
+
+   Para usar la versión de consola en vez de la ventana:
+
+   ```bash
+   mvn compile exec:java -Dexec.args=--consola
    ```
 
    Con otras credenciales:
@@ -40,7 +47,7 @@ El proyecto usa Maven y organiza `com.skillswap` por capas. Dentro de cada capa,
 
    Desde el IDE: ejecutar `com.skillswap.SkillSwapApplication` con la opción de VM `-Dnet.bytebuddy.experimental=true`.
 4. Al arrancar, Flyway crea las tablas y carga los datos demo (V1 a V5). La primera vez tarda unos segundos.
-5. Iniciar sesión con un usuario demo (es un login simulado, sin clave):
+5. Elegir un usuario demo en el selector de arriba a la derecha (es un login simulado, sin clave):
 
    | userId | Rol en la demo |
    |---|---|
@@ -52,7 +59,7 @@ El proyecto usa Maven y organiza `com.skillswap` por capas. Dentro de cada capa,
 
 ### Demo guiada
 
-La opción **D** del menú recorre el flujo completo y muestra cada paso:
+El botón **Demo guiada** de la ventana (o la opción **D** de la consola) recorre el flujo completo y muestra cada paso:
 
 1. Bruno busca y solicita la mentoría de Ana.
 2. Ana acepta (State y Observer).
