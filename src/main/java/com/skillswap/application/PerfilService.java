@@ -12,6 +12,8 @@ import java.util.UUID;
 
 /** Casos de uso de perfil. La identidad ya fue resuelta por el adapter de entrada. */
 public class PerfilService {
+    private static final Set<String> ESTADOS_ABIERTOS = Set.of("PENDIENTE", "ACEPTADA", "CONFIRMADA", "EN_CURSO");
+
     private final PerfilRepository perfilRepository;
     private final HabilidadRepository habilidades;
     private final CalificacionRepository calificaciones;
@@ -82,6 +84,13 @@ public class PerfilService {
     public void darDeBaja(String userId) {
         transacciones.ejecutar(() -> {
             Perfil perfil = obtenerPerfil(userId);
+            // Una baja no puede dejar contrataciones abiertas que la otra parte todavia podria aceptar o pagar.
+            boolean tieneAbiertas = contrataciones.listarPorParticipante(userId).stream()
+                    .anyMatch(contratacion -> ESTADOS_ABIERTOS.contains(contratacion.getEstado()));
+            if (tieneAbiertas) {
+                throw new IllegalStateException(
+                        "Tiene contrataciones abiertas: completelas, rechacelas o cancelelas antes de darse de baja");
+            }
             for (Publicacion publicacion : publicaciones.buscarActivasPorAutor(perfil.getUserId())) {
                 publicacion.pausar(perfil.getUserId());
                 publicaciones.guardar(publicacion);

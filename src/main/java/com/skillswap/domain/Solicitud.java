@@ -47,6 +47,11 @@ public class Solicitud {
         if (cliente.getId().equals(publicacion.getAutorId())) {
             throw new IllegalArgumentException("El autor no puede solicitar su propia publicacion");
         }
+        // En un desafio el autor es la organizacion: su representante tampoco puede postularse.
+        Organizacion organizacion = publicacion.getOrganizacion();
+        if (organizacion != null && cliente.getUserId().equals(organizacion.getUserIdAutorizado())) {
+            throw new IllegalArgumentException("La organizacion no puede solicitar su propio desafio");
+        }
         if (!publicacion.admiteSolicitud()) {
             throw new IllegalStateException("Una publicacion no publicada no admite solicitudes");
         }
@@ -59,6 +64,9 @@ public class Solicitud {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("La franja elegida no pertenece a la publicacion"));
 
+        if (!Instant.now().isBefore(franja.getInicio())) {
+            throw new IllegalStateException("La franja elegida ya comenzo o ya paso");
+        }
         // Chequeo temprano: el cupo se bloquea recien al aceptar.
         if (!franja.hayCupo()) {
             throw new IllegalStateException("La franja elegida no tiene cupo disponible");

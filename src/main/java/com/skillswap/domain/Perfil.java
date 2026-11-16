@@ -137,7 +137,9 @@ public class Perfil {
         if (calificacionesVerificadas == null) {
             throw new IllegalArgumentException("Las calificaciones son obligatorias");
         }
+        // Defensa del dominio: solo cuentan las calificaciones dirigidas a este perfil.
         reputacion = calificacionesVerificadas.stream()
+                .filter(calificacion -> userId.equals(calificacion.getCalificadoId()))
                 .mapToInt(Calificacion::getPuntaje)
                 .average()
                 .orElse(0.0);

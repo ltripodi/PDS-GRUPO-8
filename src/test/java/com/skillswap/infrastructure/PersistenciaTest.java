@@ -254,6 +254,8 @@ class PersistenciaTest {
         Perfil cliente = nuevoPerfil();
         Perfil proveedor = nuevoPerfil();
         Publicacion publicacion = nuevaPublicacion(proveedor, nuevaCategoria(), "Clase", Modalidad.REMOTA, 40);
+        publicacion.publicar(proveedor.getUserId()); // solo una publicacion publicada admite aceptar
+        publicaciones.guardar(publicacion);
         FranjaHoraria franja = publicaciones.buscarPorId(publicacion.getId()).orElseThrow().getFranjas().get(0);
 
         Contratacion contratacion = new Contratacion(cliente.getId(), proveedor.getId(), new SkillCoins(40),
@@ -294,6 +296,7 @@ class PersistenciaTest {
         Instant ahora = Instant.now();
         FranjaHoraria franja = new FranjaHoraria(ahora.plus(1, ChronoUnit.DAYS), ahora.plus(2, ChronoUnit.DAYS), 1);
         publicacion.getFranjas().add(franja);
+        publicacion.publicar(proveedor.getUserId()); // solo una publicacion publicada admite aceptar
         publicaciones.guardar(publicacion);
 
         Perfil clienteA = nuevoPerfil();

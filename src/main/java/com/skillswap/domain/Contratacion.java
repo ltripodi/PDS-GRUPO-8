@@ -59,13 +59,27 @@ public class Contratacion {
 
     // Acciones de la tabla 4.5: validar actor -> delegar en el State -> registrar historial.
 
-    /* Crea la reserva y bloquea el cupo. */
+    /*
+     * Crea la reserva y bloquea el cupo. Todo se valida antes de cambiar el estado: si no hay cupo,
+     * la contratacion sigue PENDIENTE (nunca queda ACEPTADA sin reserva).
+     * Entre solicitar y aceptar pudo pasar tiempo: se revalida la publicacion y la franja.
+     */
     public void aceptar(UUID actorId) {
         validarProveedor(actorId, "aceptar");
+        if (!solicitud.getPublicacion().admiteSolicitud()) {
+            throw new IllegalStateException("La publicacion ya no esta publicada: no se puede aceptar la solicitud");
+        }
+        FranjaHoraria franja = franjaElegida();
+        if (!Instant.now().isBefore(franja.getInicio())) {
+            throw new IllegalStateException("La franja elegida ya comenzo o ya paso");
+        }
+        if (!franja.hayCupo()) {
+            throw new IllegalStateException("La franja no tiene cupo disponible");
+        }
         String origen = estado;
 
         estadoActual.aceptar(this);
-        this.reserva = new Reserva(franjaElegida(), 1);
+        this.reserva = new Reserva(franja, 1);
 
         registrarTransicion(actorId, origen, "Solicitud aceptada por el proveedor");
     }
@@ -82,6 +96,9 @@ public class Contratacion {
     /* El movimiento de SkillCoins lo hace PagoService. */
     public void confirmarPago(UUID actorId) {
         validarCliente(actorId, "pagar");
+        if (solicitud.getPublicacion().getEstado() == EstadoPublicacion.CANCELADA) {
+            throw new IllegalStateException("La publicacion fue cancelada: no se puede pagar la contratacion");
+        }
         String origen = estado;
 
         estadoActual.confirmarPago(this);
@@ -180,6 +197,8 @@ public class Contratacion {
      */
     public void rechazarReprogramacion(UUID actorId) {
         validarParticipante(actorId, "rechazar una reprogramacion de");
+        // Solo en los estados que admiten reprogramar (ACEPTADA, CONFIRMADA): nunca en CANCELADA o COMPLETADA.
+        estadoActual.proponerReprogramacion(this);
 
         PropuestaReprogramacion propuesta = propuestaPendiente()
                 .orElseThrow(() -> new IllegalStateException("No hay una propuesta de reprogramacion pendiente"));

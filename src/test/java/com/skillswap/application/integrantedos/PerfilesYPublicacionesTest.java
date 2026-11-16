@@ -7,6 +7,7 @@ import com.skillswap.application.RecomendacionService;
 import com.skillswap.application.UnidadTransaccional;
 import com.skillswap.domain.Calificacion;
 import com.skillswap.domain.Categoria;
+import com.skillswap.domain.Contratacion;
 import com.skillswap.domain.EstadoPublicacion;
 import com.skillswap.domain.FranjaHoraria;
 import com.skillswap.domain.Habilidad;
@@ -64,9 +65,29 @@ class PerfilesYPublicacionesTest {
         private final DoblesEnMemoria.Perfiles perfiles = new DoblesEnMemoria.Perfiles();
         private final DoblesEnMemoria.Publicaciones publicaciones = new DoblesEnMemoria.Publicaciones(perfiles);
         private final TransaccionEspia transaccion = new TransaccionEspia();
+        private final DoblesEnMemoria.Contrataciones contrataciones = new DoblesEnMemoria.Contrataciones(perfiles);
         private final PerfilService perfilService = new PerfilService(perfiles, ids -> List.of(),
-                new SinCalificaciones(), publicaciones, new DoblesEnMemoria.Contrataciones(perfiles), transaccion);
+                new SinCalificaciones(), publicaciones, contrataciones, transaccion);
         private Perfil ana;
+
+        /* Si se diera de baja, la otra parte todavia podria aceptar o pagar esas contrataciones. */
+        @Test
+        void noSePuedeDarDeBajaConContratacionesAbiertas() {
+            Perfil usuario = perfiles.buscarPorUserId(USUARIO).orElseThrow();
+            Publicacion publicacion = publicada(ana, "Java");
+            Solicitud solicitud = Solicitud.crear(usuario, publicacion, publicacion.getFranjas().get(0).getId(),
+                    "Hola", "Aprender Java");
+            Contratacion abierta = new Contratacion(usuario.getId(), ana.getId(), new SkillCoins(10), solicitud);
+            contrataciones.guardar(abierta);
+
+            assertThrows(IllegalStateException.class, () -> perfilService.darDeBaja(ANA));
+            assertTrue(perfiles.buscarPorUserId(ANA).orElseThrow().isActivo());
+            assertEquals(EstadoPublicacion.PUBLICADA, publicacion.getEstado());
+
+            abierta.rechazar(ana.getId());
+            perfilService.darDeBaja(ANA);
+            assertFalse(perfiles.buscarPorUserId(ANA).orElseThrow().isActivo());
+        }
 
         @BeforeEach
         void registrarPerfiles() {
