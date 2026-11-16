@@ -10,6 +10,7 @@ import com.skillswap.domain.Modalidad;
 import com.skillswap.domain.Perfil;
 import com.skillswap.domain.PoliticaCancelacion;
 import com.skillswap.domain.Publicacion;
+import com.skillswap.domain.RegistroTransicion;
 import com.skillswap.domain.SkillCoins;
 import com.skillswap.domain.Solicitud;
 import com.skillswap.domain.TipoEvento;
@@ -168,6 +169,38 @@ class IntegranteTresTest {
     }
 
     @Test
+    void unaPropuestaRechazadaNoMueveLaReservaYPermiteProponerOtra() {
+        Contratacion contratacion = nuevaContratacion(franja);
+        contratacion.aceptar(proveedor.getId());
+        contratacion.proponerReprogramacion(cliente.getId(), otraFranja);
+
+        contratacion.rechazarReprogramacion(proveedor.getId());
+
+        assertEquals(franja.getId(), contratacion.getReserva().getFranjaId());
+        assertEquals(0, otraFranja.getOcupados());
+        assertTrue(contratacion.getPropuestas().get(0).isRechazada());
+        assertThrows(IllegalStateException.class, () -> contratacion.aplicarReprogramacion(proveedor.getId()));
+        assertThrows(IllegalStateException.class, () -> contratacion.rechazarReprogramacion(proveedor.getId()));
+        assertThrows(SecurityException.class, () -> contratacion.rechazarReprogramacion(UUID.randomUUID()));
+
+        // ya no hay propuesta pendiente: se puede proponer de nuevo
+        contratacion.proponerReprogramacion(proveedor.getId(), otraFranja);
+        contratacion.aplicarReprogramacion(cliente.getId());
+        assertEquals(otraFranja.getId(), contratacion.getReserva().getFranjaId());
+    }
+
+    @Test
+    void elHistorialNoSePuedeModificarDesdeAfuera() {
+        Contratacion contratacion = nuevaContratacion(franja);
+        contratacion.rechazar(proveedor.getId());
+
+        assertThrows(UnsupportedOperationException.class, () -> contratacion.getHistorial().clear());
+        assertThrows(UnsupportedOperationException.class,
+                () -> contratacion.getHistorial().add(new RegistroTransicion("x", "RECHAZADA", "ACEPTADA", "trampa")));
+        assertEquals(1, contratacion.getHistorial().size());
+    }
+
+    @Test
     void noSePuedeReprogramarUnaSesionEnCurso() {
         Contratacion contratacion = nuevaContratacion(franja);
         contratacion.aceptar(proveedor.getId());
@@ -219,6 +252,40 @@ class IntegranteTresTest {
                 new DatosSolicitudDTO(publicacion.getId(), franja.getId(), "", "Aprender"));
 
         assertThrows(SecurityException.class, () -> escenario.servicio.aceptar("intruso", dto.getId()));
+    }
+
+    @Test
+    void enUnaContratacionRechazadaSoloSeConsultaElHistorial() {
+        Escenario escenario = new Escenario(politicaFija(100));
+        escenario.perfiles.guardar(new Perfil("intruso", "Intruso", "", ZoneId.of("UTC")));
+        ContratacionController controller = new ContratacionController(escenario.servicio, escenario.pagos);
+        UUID id = controller.solicitar("cliente", publicacion.getId(), "Hola", franja.getId(), "Aprender");
+        controller.rechazar("proveedor", id);
+
+        assertThrows(IllegalStateException.class, () -> controller.aceptar("proveedor", id));
+        List<RegistroHistorialDTO> historial = controller.consultarHistorial("cliente", id);
+
+        assertEquals(1, historial.size());
+        assertEquals("PENDIENTE", historial.get(0).getOrigen());
+        assertEquals("RECHAZADA", historial.get(0).getDestino());
+        assertEquals("Proveedor", historial.get(0).getActor());
+        assertEquals("Solicitud rechazada por el proveedor", historial.get(0).getMotivo());
+        assertThrows(SecurityException.class, () -> controller.consultarHistorial("intruso", id));
+    }
+
+    @Test
+    void servicioRechazaUnaPropuestaDeReprogramacion() {
+        Escenario escenario = new Escenario(politicaFija(100));
+        ContratacionDTO dto = escenario.servicio.solicitar("cliente",
+                new DatosSolicitudDTO(publicacion.getId(), franja.getId(), "", "Aprender"));
+        escenario.servicio.aceptar("proveedor", dto.getId());
+        escenario.servicio.proponerReprogramacion("cliente", dto.getId(), otraFranja.getId());
+
+        escenario.servicio.rechazarReprogramacion("proveedor", dto.getId());
+
+        Contratacion contratacion = escenario.contrataciones.buscarPorId(dto.getId()).orElseThrow();
+        assertEquals(franja.getId(), contratacion.getReserva().getFranjaId());
+        assertEquals("ACEPTADA", contratacion.getEstado());
     }
 
     @Test

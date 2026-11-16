@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Mapeo objeto-relacional de SkillSwap (capa de Infraestructura).
+
+    Clean Architecture (consigna, seccion 6): el Dominio no debe conocer JPA ni MySQL.
+    Por eso las clases de com.skillswap.domain no tienen anotaciones de persistencia:
+    todo el mapeo vive en este archivo, fuera del dominio.
+
+    Es JPA estandar (orm 3.1). Para evitar N+1 al cargar las colecciones EAGER se usa
+    hibernate.default_batch_fetch_size en persistence.xml: las colecciones de varios
+    registros se traen en pocas consultas agrupadas.
+-->
+<entity-mappings xmlns="https://jakarta.ee/xml/ns/persistence/orm"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence/orm https://jakarta.ee/xml/ns/persistence/orm/orm_3_1.xsd"
+                 version="3.1">
+
+    <package>com.skillswap.domain</package>
+    <access>FIELD</access>
+
+    <!-- ===================== Perfiles y reputacion (4.1) ===================== -->
+
+    <entity class="Perfil">
+        <table name="perfiles"/>
+        <attributes>
+            <id name="id"/>
+            <basic name="userId">
+                <column name="user_id" nullable="false" unique="true"/>
+            </basic>
+            <basic name="nombreVisible">
+                <column name="nombre_visible" nullable="false"/>
+            </basic>
+            <basic name="biografia">
+                <column length="1000"/>
+            </basic>
+            <basic name="zonaHoraria">
+                <column name="zona_horaria"/>
+            </basic>
+            <many-to-many name="habilidades" fetch="EAGER">
+                <join-table name="perfil_habilidades">
+                    <join-column name="perfil_id"/>
+                    <inverse-join-column name="habilidad_id"/>
+                </join-table>
+            </many-to-many>
+            <element-collection name="intereses" fetch="EAGER">
+                <column name="interes"/>
+                <collection-table name="perfil_intereses">
+                    <join-column name="perfil_id"/>
+                </collection-table>
+            </element-collection>
+            <element-collection name="disponibilidad" fetch="EAGER">
+                <collection-table name="perfil_disponibilidad">
+                    <join-column name="perfil_id"/>
+                </collection-table>
+            </element-collection>
+            <embedded name="preferenciaNotificacion"/>
+        </attributes>
+    </entity>
+
+    <entity class="Habilidad">
+        <table name="habilidades"/>
+        <attributes>
+            <id name="id"/>
+            <basic name="nombre">
+                <column nullable="false" unique="true"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="Calificacion">
+        <table name="calificaciones">
+            <unique-constraint>
+                <column-name>contratacion_id</column-name>
+                <column-name>calificador_id</column-name>
+            </unique-constraint>
+        </table>
+        <attributes>
+            <id name="id"/>
+            <basic name="contratacionId">
+                <column name="contratacion_id" nullable="false"/>
+            </basic>
+            <basic name="calificadorId">
+                <column name="calificador_id" nullable="false"/>
+            </basic>
+            <basic name="calificadoId">
+                <column name="calificado_id" nullable="false"/>
+            </basic>
+            <many-to-one name="contratacion" fetch="LAZY">
+                <join-column name="contratacion_id" insertable="false" updatable="false"/>
+            </many-to-one>
+        </attributes>
+    </entity>
+
+    <!-- ===================== Publicaciones (4.2) ===================== -->
+
+    <entity class="Categoria">
+        <table name="categorias"/>
+        <attributes>
+            <id name="id"/>
+            <basic name="nombre">
+                <column nullable="false" unique="true"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="Organizacion">
+        <table name="organizaciones"/>
+        <attributes>
+            <id name="id"/>
+            <basic name="nombre">
+                <column nullable="false"/>
+            </basic>
+            <basic name="userIdAutorizado">
+                <column name="user_id_autorizado" nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="Publicacion">
+        <table name="publicaciones"/>
+        <attributes>
+            <id name="id"/>
+            <!-- Oferta: id del Perfil autor. Desafio: null (el autor es organizacion_id). -->
+            <basic name="autorId">
+                <column name="autor_id"/>
+            </basic>
+            <basic name="tipo">
+                <column nullable="false"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="titulo">
+                <column nullable="false"/>
+            </basic>
+            <basic name="descripcion">
+                <column length="2000"/>
+            </basic>
+            <basic name="modalidad">
+                <column nullable="false"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="estado">
+                <column nullable="false"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="duracionMinutos">
+                <column name="duracion_minutos"/>
+            </basic>
+            <basic name="fechaCreacion">
+                <column name="fecha_creacion"/>
+            </basic>
+            <many-to-one name="categoria" fetch="EAGER" optional="false">
+                <join-column name="categoria_id" nullable="false"/>
+            </many-to-one>
+            <many-to-one name="perfil" fetch="LAZY">
+                <join-column name="autor_id" insertable="false" updatable="false"/>
+            </many-to-one>
+            <many-to-one name="organizacion" fetch="EAGER">
+                <join-column name="organizacion_id"/>
+            </many-to-one>
+            <one-to-many name="franjas" fetch="EAGER" orphan-removal="true">
+                <join-column name="publicacion_id" nullable="false"/>
+                <cascade>
+                    <cascade-all/>
+                </cascade>
+            </one-to-many>
+            <many-to-many name="habilidades" fetch="EAGER">
+                <join-table name="publicacion_habilidades">
+                    <join-column name="publicacion_id"/>
+                    <inverse-join-column name="habilidad_id"/>
+                </join-table>
+            </many-to-many>
+            <element-collection name="etiquetas" fetch="EAGER">
+                <column name="etiqueta"/>
+                <collection-table name="publicacion_etiquetas">
+                    <join-column name="publicacion_id"/>
+                </collection-table>
+            </element-collection>
+            <element-collection name="historial" fetch="EAGER">
+                <collection-table name="publicacion_historial">
+                    <join-column name="publicacion_id"/>
+                </collection-table>
+            </element-collection>
+            <embedded name="precioBase">
+                <attribute-override name="valor">
+                    <column name="precio_base"/>
+                </attribute-override>
+            </embedded>
+        </attributes>
+    </entity>
+
+    <entity class="FranjaHoraria">
+        <table name="franjas_horarias"/>
+        <attributes>
+            <id name="id"/>
+            <!-- Optimistic locking: evita la sobreventa de cupos (consigna, seccion 8). -->
+            <version name="version"/>
+        </attributes>
+    </entity>
+
+    <!-- ===================== Solicitud, reserva y contratacion (4.4 y 4.5) ===================== -->
+
+    <entity class="Solicitud">
+        <table name="solicitudes"/>
+        <attributes>
+            <id name="id"/>
+            <basic name="clienteId">
+                <column name="cliente_id" nullable="false"/>
+            </basic>
+            <basic name="mensaje">
+                <column length="1000"/>
+            </basic>
+            <basic name="franjaId">
+                <column name="franja_id"/>
+            </basic>
+            <basic name="fechaCreacion">
+                <column name="fecha_creacion" nullable="false"/>
+            </basic>
+            <many-to-one name="publicacion" fetch="LAZY" optional="false">
+                <join-column name="publicacion_id" nullable="false"/>
+            </many-to-one>
+        </attributes>
+    </entity>
+
+    <entity class="Reserva">
+        <table name="reservas"/>
+        <attributes>
+            <id name="id"/>
+            <basic name="franjaId">
+                <column name="franja_id" nullable="false"/>
+            </basic>
+            <many-to-one name="franja" fetch="LAZY">
+                <join-column name="franja_id" insertable="false" updatable="false"/>
+            </many-to-one>
+        </attributes>
+    </entity>
+
+    <entity class="PropuestaReprogramacion">
+        <table name="propuestas_reprogramacion"/>
+        <attributes>
+            <id name="id"/>
+            <basic name="contratacionId">
+                <column name="contratacion_id" nullable="false"/>
+            </basic>
+            <basic name="nuevaFranjaId">
+                <column name="nueva_franja_id" nullable="false"/>
+            </basic>
+            <basic name="aceptacionCliente">
+                <column name="aceptacion_cliente"/>
+            </basic>
+            <basic name="aceptacionProveedor">
+                <column name="aceptacion_proveedor"/>
+            </basic>
+            <basic name="rechazada">
+                <column name="rechazada"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <entity class="Contratacion">
+        <table name="contrataciones"/>
+        <!-- State: en la base se guarda el nombre del estado y al cargar se reconstruye el objeto. -->
+        <post-load method-name="reconstruirEstadoActual"/>
+        <attributes>
+            <id name="id"/>
+            <basic name="clienteId">
+                <column name="cliente_id" nullable="false"/>
+            </basic>
+            <basic name="proveedorId">
+                <column name="proveedor_id" nullable="false"/>
+            </basic>
+            <basic name="estado">
+                <column nullable="false"/>
+            </basic>
+            <one-to-many name="propuestas" fetch="EAGER" orphan-removal="true">
+                <join-column name="contratacion_id" insertable="false" updatable="false"/>
+                <cascade>
+                    <cascade-all/>
+                </cascade>
+            </one-to-many>
+            <one-to-one name="solicitud" fetch="EAGER">
+                <join-column name="solicitud_id" nullable="false"/>
+                <cascade>
+                    <cascade-persist/>
+                    <cascade-merge/>
+                </cascade>
+            </one-to-one>
+            <one-to-one name="reserva" fetch="EAGER" orphan-removal="true">
+                <join-column name="reserva_id"/>
+                <cascade>
+                    <cascade-all/>
+                </cascade>
+            </one-to-one>
+            <element-collection name="historial" fetch="EAGER">
+                <collection-table name="contratacion_historial">
+                    <join-column name="contratacion_id"/>
+                </collection-table>
+            </element-collection>
+            <embedded name="precio">
+                <attribute-override name="valor">
+                    <column name="precio"/>
+                </attribute-override>
+            </embedded>
+            <transient name="estadoActual"/>
+        </attributes>
+    </entity>
+
+    <!-- ===================== SkillCoins, pagos y promociones ===================== -->
+
+    <entity class="Billetera">
+        <table name="billeteras"/>
+        <attributes>
+            <id name="titularId">
+                <column name="titular_id"/>
+            </id>
+            <one-to-many name="movimientos" fetch="LAZY">
+                <join-column name="titular_id" insertable="false" updatable="false"/>
+                <cascade>
+                    <cascade-all/>
+                </cascade>
+            </one-to-many>
+            <embedded name="saldo">
+                <attribute-override name="valor">
+                    <column name="saldo"/>
+                </attribute-override>
+            </embedded>
+        </attributes>
+    </entity>
+
+    <entity class="Movimiento">
+        <table name="movimientos"/>
+        <attributes>
+            <id name="id"/>
+            <basic name="titularId">
+                <column name="titular_id" nullable="false"/>
+            </basic>
+            <embedded name="monto">
+                <attribute-override name="valor">
+                    <column name="monto"/>
+                </attribute-override>
+            </embedded>
+        </attributes>
+    </entity>
+
+    <entity class="Pago">
+        <table name="pagos"/>
+        <attributes>
+            <id name="id"/>
+            <basic name="contratacionId">
+                <column name="contratacion_id" nullable="false" unique="true"/>
+            </basic>
+            <many-to-one name="contratacion" fetch="LAZY">
+                <join-column name="contratacion_id" insertable="false" updatable="false"/>
+            </many-to-one>
+            <embedded name="total">
+                <attribute-override name="valor">
+                    <column name="total"/>
+                </attribute-override>
+            </embedded>
+            <embedded name="totalReintegrado">
+                <attribute-override name="valor">
+                    <column name="total_reintegrado"/>
+                </attribute-override>
+            </embedded>
+        </attributes>
+    </entity>
+
+    <entity class="Promocion">
+        <table name="promociones"/>
+        <attributes>
+            <id name="id"/>
+            <embedded name="descuento">
+                <attribute-override name="valor">
+                    <column name="descuento"/>
+                </attribute-override>
+            </embedded>
+        </attributes>
+    </entity>
+
+    <!-- ===================== Notificaciones (4.6) ===================== -->
+
+    <entity class="Notificacion">
+        <!-- La bandeja se consulta por destinatario, de la mas reciente a la mas vieja. -->
+        <table name="notificaciones">
+            <index name="idx_notificaciones_destinatario_fecha" column-list="destinatario_id, fecha"/>
+        </table>
+        <attributes>
+            <id name="id"/>
+            <basic name="destinatarioId">
+                <column name="destinatario_id" nullable="false"/>
+            </basic>
+            <basic name="tipo">
+                <column nullable="false"/>
+                <enumerated>STRING</enumerated>
+            </basic>
+            <basic name="titulo">
+                <column nullable="false"/>
+            </basic>
+            <basic name="detalle">
+                <column length="1000"/>
+            </basic>
+            <basic name="fecha">
+                <column nullable="false"/>
+            </basic>
+        </attributes>
+    </entity>
+
+    <!-- ===================== Value objects (embeddables) ===================== -->
+
+    <embeddable class="SkillCoins"/>
+
+    <embeddable class="RegistroTransicion"/>
+
+    <embeddable class="DisponibilidadPerfil"/>
+
+    <embeddable class="PreferenciaNotificacion">
+        <attributes>
+            <element-collection name="canales" fetch="EAGER">
+                <column name="canal"/>
+                <enumerated>STRING</enumerated>
+                <collection-table name="perfil_canales_notificacion">
+                    <join-column name="perfil_id"/>
+                </collection-table>
+            </element-collection>
+        </attributes>
+    </embeddable>
+
+</entity-mappings>

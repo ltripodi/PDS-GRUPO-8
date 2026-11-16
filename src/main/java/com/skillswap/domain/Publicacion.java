@@ -1,116 +1,85 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-@Entity
-@Table(name = "publicaciones")
 public class Publicacion {
-    @Id
     private UUID id;
 
-    @Column(name = "autor_id", nullable = false)
+    /*
+     * Autor de una OFERTA: id del Perfil, con clave foranea hacia perfiles.
+     * En un DESAFIO queda en null: el autor es la organizacion (organizacion_id, con su propia clave foranea).
+     * Exactamente uno de los dos tiene valor; lo garantizan los constructores. Para leer el autor usar getAutorId().
+     */
     private UUID autorId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private TipoPublicacion tipo;
 
-    @Column(nullable = false)
     private String titulo;
 
-    @Column(length = 2000)
     private String descripcion;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private Modalidad modalidad;
 
-    @Embedded
-    @AttributeOverride(name = "valor", column = @Column(name = "precio_base"))
     private SkillCoins precioBase;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private EstadoPublicacion estado;
 
     private int cupo;
 
-    @Column(name = "duracion_minutos")
     private int duracionMinutos;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "publicacion_etiquetas", joinColumns = @JoinColumn(name = "publicacion_id"))
-    @Column(name = "etiqueta")
     private Set<String> etiquetas;
 
-    @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JoinColumn(name = "publicacion_id", nullable = false)
-    @Fetch(FetchMode.SUBSELECT)
     private List<FranjaHoraria> franjas = new ArrayList<>();
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "publicacion_habilidades", joinColumns = @JoinColumn(name = "publicacion_id"), inverseJoinColumns = @JoinColumn(name = "habilidad_id"))
     private Set<Habilidad> habilidades = new HashSet<>();
 
-    /* Navegacion de solo lectura: la columna autor_id se escribe desde autorId. */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "autor_id", insertable = false, updatable = false)
+    /*
+     * Navegacion de solo lectura: la columna autor_id se escribe desde autorId.
+     * En un desafio autor_id es null, asi que esta relacion tambien: las consultas la usan con LEFT JOIN.
+     */
     private Perfil perfil;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "organizacion_id")
     private Organizacion organizacion;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "publicacion_historial", joinColumns = @JoinColumn(name = "publicacion_id"))
-    @Fetch(FetchMode.SUBSELECT)
     private List<RegistroTransicion> historial = new ArrayList<>();
 
     protected Publicacion() {
     }
 
+    /* Oferta de un perfil (mentoria o servicio). Un desafio se crea con crearDesafio. */
     public Publicacion(UUID autorId, TipoPublicacion tipo, String titulo, String descripcion, Categoria categoria,
                        Modalidad modalidad, SkillCoins precioBase, int duracionMinutos, int cupo) {
-        if (autorId == null || tipo == null || categoria == null || modalidad == null || precioBase == null) {
+        this(tipo, titulo, descripcion, categoria, modalidad, precioBase, duracionMinutos, cupo);
+        if (autorId == null) {
+            throw new IllegalArgumentException("Autor, tipo, categoria, modalidad y precio son obligatorios");
+        }
+        if (tipo == TipoPublicacion.DESAFIO) {
+            throw new IllegalArgumentException("Un desafio se crea con crearDesafio y tiene una organizacion autora");
+        }
+        this.autorId = autorId;
+    }
+
+    /* Datos comunes a ofertas y desafios. El autor lo asigna quien la llama. */
+    private Publicacion(TipoPublicacion tipo, String titulo, String descripcion, Categoria categoria,
+                        Modalidad modalidad, SkillCoins precioBase, int duracionMinutos, int cupo) {
+        if (tipo == null || categoria == null || modalidad == null || precioBase == null) {
             throw new IllegalArgumentException("Autor, tipo, categoria, modalidad y precio son obligatorios");
         }
         if (duracionMinutos <= 0 || cupo <= 0) {
             throw new IllegalArgumentException("La duracion y el cupo deben ser positivos");
         }
         this.id = UUID.randomUUID();
-        this.autorId = autorId;
         this.tipo = tipo;
         this.titulo = titulo == null ? "" : titulo.trim();
         this.descripcion = descripcion == null ? "" : descripcion.trim();
@@ -145,8 +114,8 @@ public class Publicacion {
         if (autora == null) {
             throw new IllegalArgumentException("El desafio requiere una organizacion autora");
         }
-        Publicacion publicacion = new Publicacion(autora.getId(), TipoPublicacion.DESAFIO, titulo, descripcion,
-                categoria, modalidad, precioBase, duracionMinutos, cupo);
+        Publicacion publicacion = new Publicacion(TipoPublicacion.DESAFIO, titulo, descripcion, categoria, modalidad,
+                precioBase, duracionMinutos, cupo);
         publicacion.organizacion = autora;
         return publicacion;
     }
@@ -155,8 +124,9 @@ public class Publicacion {
         return id;
     }
 
+    /* Id del autor: el del Perfil en una oferta, el de la Organizacion en un desafio. */
     public UUID getAutorId() {
-        return autorId;
+        return organizacion != null ? organizacion.getId() : autorId;
     }
 
     public TipoPublicacion getTipo() {
@@ -211,6 +181,7 @@ public class Publicacion {
         return habilidades;
     }
 
+    /* Solo para ofertas de un perfil. En un desafio es null: usar getOrganizacion(). */
     public Perfil getPerfil() {
         return perfil;
     }
@@ -219,8 +190,9 @@ public class Publicacion {
         return organizacion;
     }
 
+    /* Historial inmutable (seccion 5): solo transicionar(...) agrega entradas. */
     public List<RegistroTransicion> getHistorial() {
-        return historial;
+        return Collections.unmodifiableList(historial);
     }
 
     public void editarDatos(String titulo, String descripcion, SkillCoins precio) {

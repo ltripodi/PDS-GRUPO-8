@@ -1,25 +1,8 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.PostLoad;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,45 +11,26 @@ import java.util.UUID;
  * State Pattern - Context: delega en estadoActual si una accion es valida.
  * Ella valida el actor (id de Perfil), maneja la reserva y registra el historial.
  */
-@Entity
-@Table(name = "contrataciones")
 public class Contratacion {
-    @Id
     private UUID id;
 
-    @Column(name = "cliente_id", nullable = false)
     private UUID clienteId;
 
-    @Column(name = "proveedor_id", nullable = false)
     private UUID proveedorId;
 
-    @Embedded
-    @AttributeOverride(name = "valor", column = @Column(name = "precio"))
     private SkillCoins precio;
 
     /* State en memoria; en la DB se guarda el nombre. */
-    @Transient
     private EstadoContratacion estadoActual;
 
-    @Column(nullable = false)
     private String estado = "PENDIENTE";
 
-    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
-    @JoinColumn(name = "solicitud_id", nullable = false)
     private Solicitud solicitud;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JoinColumn(name = "reserva_id")
     private Reserva reserva;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JoinColumn(name = "contratacion_id", insertable = false, updatable = false)
-    @Fetch(FetchMode.SUBSELECT)
     private List<PropuestaReprogramacion> propuestas = new ArrayList<>();
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "contratacion_historial", joinColumns = @JoinColumn(name = "contratacion_id"))
-    @Fetch(FetchMode.SUBSELECT)
     private List<RegistroTransicion> historial = new ArrayList<>();
 
     protected Contratacion() {
@@ -89,7 +53,6 @@ public class Contratacion {
         this.estado = estadoActual.nombre();
     }
 
-    @PostLoad
     private void reconstruirEstadoActual() {
         this.estadoActual = EstadoContratacionBase.desdeNombre(this.estado);
     }
@@ -211,6 +174,20 @@ public class Contratacion {
         registrarTransicion(actorId, estado, "Reprogramada a la franja " + nuevaFranja.getId());
     }
 
+    /*
+     * Reprogramacion: si una parte no acepta, la propuesta se descarta y la reserva queda igual.
+     * Sirve tanto para que la otra parte la rechace como para que quien la propuso la retire.
+     */
+    public void rechazarReprogramacion(UUID actorId) {
+        validarParticipante(actorId, "rechazar una reprogramacion de");
+
+        PropuestaReprogramacion propuesta = propuestaPendiente()
+                .orElseThrow(() -> new IllegalStateException("No hay una propuesta de reprogramacion pendiente"));
+        propuesta.rechazar();
+
+        registrarTransicion(actorId, estado, "Propuesta de reprogramacion rechazada");
+    }
+
     /* Package-private: solo los estados pueden cambiar el estado. */
     void cambiarEstado(EstadoContratacion nuevoEstado) {
         this.estadoActual = nuevoEstado;
@@ -258,7 +235,7 @@ public class Contratacion {
 
     private Optional<PropuestaReprogramacion> propuestaPendiente() {
         return propuestas.stream()
-                .filter(propuesta -> !propuesta.aceptadaPorAmbos())
+                .filter(PropuestaReprogramacion::estaPendiente)
                 .findFirst();
     }
 
@@ -313,7 +290,8 @@ public class Contratacion {
         return propuestas;
     }
 
+    /* Historial inmutable (seccion 5): solo registrarTransicion agrega entradas. */
     public List<RegistroTransicion> getHistorial() {
-        return historial;
+        return Collections.unmodifiableList(historial);
     }
 }

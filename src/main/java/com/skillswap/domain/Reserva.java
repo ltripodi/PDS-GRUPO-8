@@ -1,34 +1,20 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-
 import java.util.UUID;
 
 /*
  * Crear una reserva ocupa el cupo y liberarla lo devuelve.
  * La sobreventa concurrente la frena el @Version de FranjaHoraria.
  */
-@Entity
-@Table(name = "reservas")
 public class Reserva {
-    @Id
     private UUID id;
 
-    @Column(name = "franja_id", nullable = false)
     private UUID franjaId;
 
     private int cantidad;
 
     private boolean vigente;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "franja_id", insertable = false, updatable = false)
     private FranjaHoraria franja;
 
     protected Reserva() {

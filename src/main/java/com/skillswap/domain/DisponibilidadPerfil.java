@@ -1,11 +1,8 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.Embeddable;
-
 import java.time.Instant;
 
 /** Value Object. */
-@Embeddable
 public class DisponibilidadPerfil {
     private Instant inicio;
     private Instant fin;

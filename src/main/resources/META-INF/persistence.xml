@@ -9,6 +9,9 @@
 
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
+        <!-- El mapeo esta en orm.xml: el dominio no tiene anotaciones JPA (Clean Architecture, seccion 6). -->
+        <mapping-file>META-INF/orm.xml</mapping-file>
+
         <class>com.skillswap.domain.Habilidad</class>
         <class>com.skillswap.domain.Categoria</class>
         <class>com.skillswap.domain.Organizacion</class>
@@ -25,8 +28,6 @@
         <class>com.skillswap.domain.Promocion</class>
         <class>com.skillswap.domain.Perfil</class>
         <class>com.skillswap.domain.Contratacion</class>
-        <class>com.skillswap.domain.RegistroEstadoPublicacion</class>
-        <class>com.skillswap.domain.RegistroEstadoContratacion</class>
 
         <properties>
             <property name="jakarta.persistence.jdbc.driver"
@@ -45,8 +46,13 @@
             <property name="hibernate.dialect"
                       value="org.hibernate.dialect.MySQLDialect"/>
 
+            <!-- El esquema lo crea Flyway (db/migration), no Hibernate. Ver MigracionesBaseDeDatos. -->
             <property name="hibernate.hbm2ddl.auto"
-                      value="update"/>
+                      value="none"/>
+
+            <!-- Evita N+1: las colecciones de varias entidades se cargan en lotes (consigna, seccion 8). -->
+            <property name="hibernate.default_batch_fetch_size"
+                      value="50"/>
 
             <property name="hibernate.show_sql"
                       value="true"/>

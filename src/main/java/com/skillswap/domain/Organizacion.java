@@ -1,22 +1,12 @@
 package com.skillswap.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
 import java.util.UUID;
 
-@Entity
-@Table(name = "organizaciones")
 public class Organizacion {
-    @Id
     private UUID id;
 
-    @Column(nullable = false)
     private String nombre;
 
-    @Column(name = "user_id_autorizado", nullable = false)
     private String userIdAutorizado;
 
     protected Organizacion() {

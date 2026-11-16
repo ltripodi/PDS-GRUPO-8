@@ -6,6 +6,7 @@ import com.skillswap.application.ContratacionService;
 import com.skillswap.application.DatosSolicitudDTO;
 import com.skillswap.application.Pagina;
 import com.skillswap.application.PagoService;
+import com.skillswap.application.RegistroHistorialDTO;
 
 import java.util.List;
 import java.util.UUID;
@@ -72,6 +73,16 @@ public class ContratacionController {
     public void aceptarReprogramacion(String userId, UUID contratacionId) {
         validar(userId, contratacionId);
         contratacionService.aceptarReprogramacion(userId, contratacionId);
+    }
+
+    public void rechazarReprogramacion(String userId, UUID contratacionId) {
+        validar(userId, contratacionId);
+        contratacionService.rechazarReprogramacion(userId, contratacionId);
+    }
+
+    public List<RegistroHistorialDTO> consultarHistorial(String userId, UUID contratacionId) {
+        validar(userId, contratacionId);
+        return contratacionService.consultarHistorial(userId, contratacionId);
     }
 
     public List<ContratacionDTO> listarContrataciones(String userId) {

@@ -1,10 +1,14 @@
 package com.skillswap.infrastructure;
-
+import com.skillswap.application.DatosPublicacionDTO;
+import com.skillswap.application.PublicacionService;
+import com.skillswap.domain.Organizacion;
 import com.skillswap.application.BilleteraRepository;
 import com.skillswap.application.CalificacionRepository;
 import com.skillswap.application.ContratacionRepository;
 import com.skillswap.application.FiltrosBusqueda;
 import com.skillswap.application.NotificacionRepository;
+import com.skillswap.application.NotificacionService;
+import com.skillswap.application.NotificacionesObserver;
 import com.skillswap.application.Pagina;
 import com.skillswap.application.PagoRepository;
 import com.skillswap.application.PerfilRepository;
@@ -22,7 +26,9 @@ import com.skillswap.domain.FranjaHoraria;
 import com.skillswap.domain.Habilidad;
 import com.skillswap.domain.Modalidad;
 import com.skillswap.domain.Movimiento;
+import com.skillswap.domain.EventoDominio;
 import com.skillswap.domain.Notificacion;
+import com.skillswap.domain.TipoEvento;
 import com.skillswap.domain.OrdenPublicacion;
 import com.skillswap.domain.Pago;
 import com.skillswap.domain.Perfil;
@@ -34,15 +40,22 @@ import com.skillswap.domain.SkillCoins;
 import com.skillswap.domain.Solicitud;
 import com.skillswap.domain.TipoPublicacion;
 import jakarta.persistence.PersistenceException;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -67,10 +80,10 @@ class PersistenciaTest {
     private final PagoRepository pagos = new JpaPagoRepository();
     private final UnidadTransaccional unidad = new JpaUnidadTransaccional();
 
-    @AfterAll
-    static void cerrar() {
-        JPAUtil.close();
-    }
+    /*
+     * No se cierra JPAUtil al terminar: la EntityManagerFactory es estatica y la comparten
+     * todas las clases de test de la misma JVM. Cerrarla aca rompia las que corrian despues.
+     */
 
     // ---------- helpers ----------
 
@@ -102,7 +115,6 @@ class PersistenciaTest {
                 categoria, modalidad, new SkillCoins(precio), 60, 3);
         Instant ahora = Instant.now();
         publicacion.getFranjas().add(new FranjaHoraria(ahora.plus(1, ChronoUnit.DAYS), ahora.plus(2, ChronoUnit.DAYS), 3));
-        publicacion.getHistorial().add(new RegistroTransicion(autor.getUserId(), "-", "BORRADOR", "alta"));
         publicaciones.guardar(publicacion);
         return publicacion;
     }
@@ -171,9 +183,20 @@ class PersistenciaTest {
         assertEquals(100, leida.getPrecioBase().getValor());
         assertEquals(categoria.getId(), leida.getCategoria().getId());
         assertEquals(1, leida.getFranjas().size());
-        assertEquals(1, leida.getHistorial().size());
-        assertEquals("BORRADOR", leida.getHistorial().get(0).getDestino());
+        assertTrue(leida.getHistorial().isEmpty(), "un borrador todavia no tiene transiciones");
         assertEquals(0, leida.getFranjas().get(0).getOcupados());
+
+        // La transicion la registra el dominio (historial inmutable) y se persiste con la publicacion.
+        leida.publicar(autor.getUserId());
+        publicaciones.guardar(leida);
+        Publicacion publicada = publicaciones.buscarPorId(publicacion.getId()).orElseThrow();
+        assertEquals(EstadoPublicacion.PUBLICADA, publicada.getEstado());
+        assertEquals(1, publicada.getHistorial().size());
+        assertEquals("BORRADOR", publicada.getHistorial().get(0).getOrigen());
+        assertEquals("PUBLICADA", publicada.getHistorial().get(0).getDestino());
+        assertEquals(autor.getUserId(), publicada.getHistorial().get(0).getActorId());
+        assertThrows(UnsupportedOperationException.class, () -> publicada.getHistorial().clear(),
+                "el historial no se puede modificar desde afuera");
     }
 
     @Test
@@ -190,7 +213,7 @@ class PersistenciaTest {
         publicar(cara);
 
         // Solo las PUBLICADAS, ordenadas por menor precio, 2 por pagina
-        FiltrosBusqueda todas = new FiltrosBusqueda(null, categoria.getId(), null, 0, 0, null, 0, OrdenPublicacion.MENOR_PRECIO);
+        FiltrosBusqueda todas = new FiltrosBusqueda(null, categoria.getId(), null, null, null, null, null, OrdenPublicacion.MENOR_PRECIO);
         Pagina<Publicacion> primera = publicaciones.buscar(todas, 0, 2);
         Pagina<Publicacion> segunda = publicaciones.buscar(todas, 1, 2);
 
@@ -199,14 +222,14 @@ class PersistenciaTest {
         assertEquals(List.of(cara.getId()), segunda.getElementos().stream().map(Publicacion::getId).toList());
 
         // Texto + modalidad + rango de precio
-        FiltrosBusqueda guitarraPresencial = new FiltrosBusqueda("guitarra", categoria.getId(), Modalidad.PRESENCIAL, 20, 60, null, 0, null);
+        FiltrosBusqueda guitarraPresencial = new FiltrosBusqueda("guitarra", categoria.getId(), Modalidad.PRESENCIAL, 20, 60, null, null, null);
         Pagina<Publicacion> resultado = publicaciones.buscar(guitarraPresencial, 0, 10);
         assertEquals(1, resultado.getTotalElementos());
         assertEquals(media.getId(), resultado.getElementos().get(0).getId());
 
         // Mas reciente / reputacion minima (el autor tiene reputacion 0, asi que 1+ no devuelve nada)
-        assertEquals(3, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, 0, 0, null, 0, OrdenPublicacion.MAS_RECIENTE), 0, 10).getTotalElementos());
-        assertEquals(0, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, 0, 0, null, 1, OrdenPublicacion.REPUTACION), 0, 10).getTotalElementos());
+        assertEquals(3, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, null, null, null, null, OrdenPublicacion.MAS_RECIENTE), 0, 10).getTotalElementos());
+        assertEquals(0, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, null, null, null, 1.0, OrdenPublicacion.REPUTACION), 0, 10).getTotalElementos());
 
         // Habilidad
         Habilidad habilidad = new Habilidad("Musica-" + UUID.randomUUID());
@@ -214,7 +237,7 @@ class PersistenciaTest {
         Publicacion conHabilidad = publicaciones.buscarPorId(barata.getId()).orElseThrow();
         conHabilidad.getHabilidades().add(habilidad);
         publicaciones.guardar(conHabilidad);
-        Pagina<Publicacion> porHabilidad = publicaciones.buscar(new FiltrosBusqueda(null, null, null, 0, 0, habilidad.getId(), 0, null), 0, 10);
+        Pagina<Publicacion> porHabilidad = publicaciones.buscar(new FiltrosBusqueda(null, null, null, null, null, habilidad.getId(), null, null), 0, 10);
         assertEquals(1, porHabilidad.getTotalElementos());
 
         // Consultas por autor y candidatas
@@ -234,15 +257,14 @@ class PersistenciaTest {
 
         Contratacion contratacion = new Contratacion(cliente.getId(), proveedor.getId(), new SkillCoins(40),
                 nuevaSolicitud(cliente, publicacion));
-        asignar(contratacion, "reserva", new Reserva(franja, 1));
+        contratacion.aceptar(proveedor.getId()); // crea la reserva y registra la transicion en el historial
         contratacion.getPropuestas().add(new PropuestaReprogramacion(contratacion.getId(), UUID.randomUUID()));
-        contratacion.getHistorial().add(new RegistroTransicion(cliente.getUserId(), "-", "PENDIENTE", "solicitud"));
         contrataciones.guardar(contratacion);
 
         Contratacion leida = contrataciones.buscarPorId(contratacion.getId()).orElseThrow();
 
-        assertEquals("PENDIENTE", leida.getEstado());
-        assertEquals("PENDIENTE", leida.getEstadoActual().nombre()); // State reconstruido por @PostLoad
+        assertEquals("ACEPTADA", leida.getEstado());
+        assertEquals("ACEPTADA", leida.getEstadoActual().nombre()); // State reconstruido por @PostLoad
         assertEquals(40, leida.getPrecio().getValor());
         assertEquals(publicacion.getId(), leida.getSolicitud().getPublicacion().getId());
         assertEquals(franja.getId(), leida.getReserva().getFranjaId());
@@ -250,11 +272,87 @@ class PersistenciaTest {
         assertEquals(1, leida.getPropuestas().size());
         assertEquals(leida.getId(), leida.getPropuestas().get(0).getContratacionId());
         assertEquals(1, leida.getHistorial().size());
+        assertEquals("ACEPTADA", leida.getHistorial().get(0).getDestino());
 
         // listarPorParticipante resuelve el userId contra cliente y proveedor
         assertEquals(1, contrataciones.listarPorParticipante(cliente.getUserId()).size());
         assertEquals(1, contrataciones.listarPorParticipante(proveedor.getUserId()).size());
         assertEquals(0, contrataciones.listarPorParticipante("otro-usuario").size());
+    }
+
+    /*
+     * Caso de aceptacion 15: dos aceptaciones simultaneas no pueden consumir el ultimo cupo.
+     * Ambas transacciones leen la franja con ocupados = 0; el @Version de FranjaHoraria
+     * hace fallar el commit de la segunda, que hace rollback completo.
+     */
+    @Test
+    void dosAceptacionesSimultaneasNoConsumenElUltimoCupo() throws Exception {
+        Perfil proveedor = nuevoPerfil();
+        Publicacion publicacion = new Publicacion(proveedor.getId(), TipoPublicacion.MENTORIA, "Ultimo cupo", "desc",
+                nuevaCategoria(), Modalidad.REMOTA, new SkillCoins(40), 60, 1);
+        Instant ahora = Instant.now();
+        FranjaHoraria franja = new FranjaHoraria(ahora.plus(1, ChronoUnit.DAYS), ahora.plus(2, ChronoUnit.DAYS), 1);
+        publicacion.getFranjas().add(franja);
+        publicaciones.guardar(publicacion);
+
+        Perfil clienteA = nuevoPerfil();
+        Perfil clienteB = nuevoPerfil();
+        Contratacion primera = new Contratacion(clienteA.getId(), proveedor.getId(), new SkillCoins(40),
+                new Solicitud(clienteA.getId(), publicacion, franja.getId(), "", "aprender"));
+        Contratacion segunda = new Contratacion(clienteB.getId(), proveedor.getId(), new SkillCoins(40),
+                new Solicitud(clienteB.getId(), publicacion, franja.getId(), "", "aprender"));
+        contrataciones.guardar(primera);
+        contrataciones.guardar(segunda);
+
+        CyclicBarrier ambasLeyeron = new CyclicBarrier(2);
+        ExecutorService hilos = Executors.newFixedThreadPool(2);
+        try {
+            Future<Throwable> a = hilos.submit(() -> aceptarEnTransaccion(primera.getId(), proveedor.getId(), ambasLeyeron));
+            Future<Throwable> b = hilos.submit(() -> aceptarEnTransaccion(segunda.getId(), proveedor.getId(), ambasLeyeron));
+            List<Throwable> resultados = new ArrayList<>(List.of(
+                    Optional.ofNullable(a.get(30, TimeUnit.SECONDS)).orElse(SIN_ERROR),
+                    Optional.ofNullable(b.get(30, TimeUnit.SECONDS)).orElse(SIN_ERROR)));
+
+            assertEquals(1, resultados.stream().filter(r -> r == SIN_ERROR).count(), "Solo una aceptacion debe confirmarse");
+            assertEquals(1, resultados.stream().filter(PersistenceException.class::isInstance).count(),
+                    "La otra debe fallar por optimistic locking");
+        } finally {
+            hilos.shutdownNow();
+        }
+
+        FranjaHoraria leida = publicaciones.buscarPorId(publicacion.getId()).orElseThrow().getFranjas().get(0);
+        assertEquals(1, leida.getOcupados());
+        long aceptadas = List.of(primera.getId(), segunda.getId()).stream()
+                .map(id -> contrataciones.buscarPorId(id).orElseThrow().getEstado())
+                .filter("ACEPTADA"::equals)
+                .count();
+        assertEquals(1, aceptadas, "La contratacion que fallo debe quedar PENDIENTE (rollback)");
+    }
+
+    private static final Throwable SIN_ERROR = new Throwable("sin error");
+
+    /* Devuelve null si confirmo, o la excepcion con la que fallo. */
+    private Throwable aceptarEnTransaccion(UUID contratacionId, UUID proveedorId, CyclicBarrier ambasLeyeron) {
+        try {
+            unidad.ejecutar(() -> {
+                Contratacion contratacion = contrataciones.buscarPorId(contratacionId).orElseThrow();
+                contratacion.getSolicitud().getPublicacion().getFranjas().size(); // lee la franja (version 0)
+                esperar(ambasLeyeron);
+                contratacion.aceptar(proveedorId);
+                contrataciones.guardar(contratacion);
+            });
+            return null;
+        } catch (RuntimeException e) {
+            return e;
+        }
+    }
+
+    private static void esperar(CyclicBarrier barrera) {
+        try {
+            barrera.await(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Test
@@ -339,11 +437,11 @@ class PersistenciaTest {
     @Test
     void notificacionesSeListanPorDestinatario() {
         String destinatario = nuevoUserId();
-        Notificacion notificacion = new Notificacion(destinatario, "Titulo", "Detalle", "SOLICITUD_RECIBIDA");
+        Notificacion notificacion = new Notificacion(destinatario, TipoEvento.SOLICITUD_RECIBIDA, "Titulo", "Detalle");
         notificaciones.guardar(notificacion);
 
-        assertEquals(1, notificaciones.listar(destinatario).size());
-        assertTrue(notificaciones.listar("otro").isEmpty());
+        assertEquals(1, notificaciones.listar(destinatario, 0, 20).getElementos().size());
+        assertTrue(notificaciones.listar("otro", 0, 20).getElementos().isEmpty());
         Notificacion leida = notificaciones.buscarPorId(notificacion.getId()).orElseThrow();
         assertFalse(leida.isLeida());
         assertEquals("Titulo", leida.getTitulo());
@@ -354,15 +452,198 @@ class PersistenciaTest {
         String destinatario = nuevoUserId();
 
         assertThrows(IllegalStateException.class, () -> unidad.ejecutar(() -> {
-            notificaciones.guardar(new Notificacion(destinatario, "t", "d", "x"));
+            notificaciones.guardar(new Notificacion(destinatario, TipoEvento.ACEPTACION, "t", "d"));
             throw new IllegalStateException("falla a mitad de la operacion");
         }));
-        assertTrue(notificaciones.listar(destinatario).isEmpty());
+        assertTrue(notificaciones.listar(destinatario, 0, 20).getElementos().isEmpty());
 
         unidad.ejecutar(() -> {
-            notificaciones.guardar(new Notificacion(destinatario, "t1", "d", "x"));
-            notificaciones.guardar(new Notificacion(destinatario, "t2", "d", "x"));
+            notificaciones.guardar(new Notificacion(destinatario, TipoEvento.ACEPTACION, "t1", "d"));
+            notificaciones.guardar(new Notificacion(destinatario, TipoEvento.ACEPTACION, "t2", "d"));
         });
-        assertEquals(2, notificaciones.listar(destinatario).size());
+        assertEquals(2, notificaciones.listar(destinatario, 0, 20).getElementos().size());
+    }
+
+    // ---------- 4.6: eventos y transacciones (integracion con H2) ----------
+
+    private PublicadorEventosEnMemoria publicadorConNotificaciones() {
+        PublicadorEventosEnMemoria publicador = new PublicadorEventosEnMemoria();
+        NotificacionService servicio = new NotificacionService(notificaciones, perfiles,
+                List.of(new CanalInterno(notificaciones)));
+        publicador.suscribir(new NotificacionesObserver(servicio));
+        return publicador;
+    }
+
+    private static EventoDominio aceptacionPara(String destinatario) {
+        return new EventoDominio(TipoEvento.ACEPTACION, UUID.randomUUID(), "proveedor-" + UUID.randomUUID(),
+                Set.of(destinatario));
+    }
+
+    @Test
+    void laNotificacionSeGuardaRecienDespuesDelCommit() {
+        String destinatario = nuevoUserId();
+        PublicadorEventosEnMemoria publicador = publicadorConNotificaciones();
+
+        unidad.ejecutar(() -> {
+            publicador.publicarDespuesDelCommit(aceptacionPara(destinatario));
+            assertTrue(notificaciones.listar(destinatario, 0, 20).getElementos().isEmpty());
+        });
+
+        List<Notificacion> guardadas = notificaciones.listar(destinatario, 0, 20).getElementos();
+        assertEquals(1, guardadas.size());
+        assertEquals("Tu solicitud fue aceptada", guardadas.get(0).getTitulo());
+    }
+
+    @Test
+    void noSeNotificaUnaOperacionQueHizoRollback() {
+        String destinatario = nuevoUserId();
+        PublicadorEventosEnMemoria publicador = publicadorConNotificaciones();
+
+        assertThrows(IllegalStateException.class, () -> unidad.ejecutar(() -> {
+            publicador.publicarDespuesDelCommit(aceptacionPara(destinatario));
+            throw new IllegalStateException("falla despues de publicar");
+        }));
+
+        assertTrue(notificaciones.listar(destinatario, 0, 20).getElementos().isEmpty());
+    }
+
+    @Test
+    void enUnaTransaccionAnidadaElAvisoEsperaAlCommitDeLaExterna() {
+        String destinatario = nuevoUserId();
+        PublicadorEventosEnMemoria publicador = publicadorConNotificaciones();
+
+        unidad.ejecutar(() -> {
+            unidad.ejecutar(() -> publicador.publicarDespuesDelCommit(aceptacionPara(destinatario)));
+            assertTrue(notificaciones.listar(destinatario, 0, 20).getElementos().isEmpty());
+        });
+
+        assertEquals(1, notificaciones.listar(destinatario, 0, 20).getElementos().size());
+    }
+
+    @Test
+    void unErrorAlNotificarNoDeshaceLaOperacionConfirmada() {
+        String destinatario = nuevoUserId();
+        PublicadorEventosEnMemoria publicador = publicadorConNotificaciones();
+        publicador.suscribir(evento -> {
+            throw new IllegalStateException("observador roto");
+        });
+        Notificacion datoDelCasoDeUso = new Notificacion(destinatario, TipoEvento.ACEPTACION, "Dato del caso de uso", "d");
+
+        unidad.ejecutar(() -> {
+            notificaciones.guardar(datoDelCasoDeUso);
+            publicador.publicarDespuesDelCommit(aceptacionPara(destinatario));
+        });
+
+        assertEquals(2, notificaciones.listar(destinatario, 0, 20).getElementos().size());
+    }
+
+    @Test
+    void marcarLeidaQuedaGuardadoEnLaBase() {
+        String destinatario = nuevoUserId();
+        Notificacion notificacion = new Notificacion(destinatario, TipoEvento.ACEPTACION, "t", "d");
+        notificaciones.guardar(notificacion);
+        NotificacionService servicio = new NotificacionService(notificaciones, perfiles,
+                List.of(new CanalInterno(notificaciones)));
+
+        servicio.marcarLeida(destinatario, notificacion.getId());
+
+        assertTrue(notificaciones.buscarPorId(notificacion.getId()).orElseThrow().isLeida());
+    }
+
+    @Test
+    void unDesafioDeOrganizacionSePuedeGuardarYRecuperar() {
+        // Arrange: organización real, con un representante autorizado
+        String representante = "representante-" + UUID.randomUUID();
+
+        Organizacion organizacion = new Organizacion(
+                "Empresa de prueba", representante
+        );
+        persistir(organizacion);
+
+        Categoria categoria = nuevaCategoria();
+
+        PublicacionService servicio = new PublicacionService(
+                publicaciones,
+                perfiles,
+                new JpaOrganizacionRepository()
+        );
+
+        DatosPublicacionDTO datos = new DatosPublicacionDTO(
+                "Desafío Java",
+                "Desarrollar una aplicación",
+                categoria.getId(),
+                Modalidad.REMOTA,
+                60,
+                1,
+                new SkillCoins(100),
+                Set.of("Java"),
+                TipoPublicacion.DESAFIO,
+                organizacion.getId()
+        );
+
+        // Act: crear usando el caso de uso real
+        Publicacion creada = servicio.crearBorrador(
+                representante, datos
+        );
+
+        // Assert: verificar que quedó guardada
+        Publicacion recuperada = publicaciones
+                .buscarPorId(creada.getId())
+                .orElseThrow();
+
+        assertEquals(TipoPublicacion.DESAFIO, recuperada.getTipo());
+        assertEquals(organizacion.getId(), recuperada.getAutorId());
+        assertEquals(organizacion.getId(),
+                recuperada.getOrganizacion().getId());
+    }
+
+
+    /* Opcion B: en un desafio autor_id queda vacio y el autor esta en organizacion_id. */
+    @Test
+    void unDesafioGuardadoDejaVaciaLaColumnaDelPerfilAutorYUsaLaDeLaOrganizacion() {
+        Organizacion organizacion = new Organizacion("Org " + UUID.randomUUID(), nuevoUserId());
+        persistir(organizacion);
+        Publicacion desafio = Publicacion.crearDesafio(organizacion, "Hackaton", "desc", nuevaCategoria(),
+                Modalidad.REMOTA, new SkillCoins(0), 60, 3);
+        publicaciones.guardar(desafio);
+
+        long filas = JPAUtil.consultar(em -> ((Number) em.createNativeQuery(
+                        "SELECT COUNT(*) FROM publicaciones WHERE id = :id AND autor_id IS NULL AND organizacion_id = :org")
+                .setParameter("id", desafio.getId())
+                .setParameter("org", organizacion.getId())
+                .getSingleResult()).longValue());
+
+        assertEquals(1, filas);
+        assertEquals(organizacion.getId(), publicaciones.buscarPorId(desafio.getId()).orElseThrow().getAutorId());
+    }
+
+    /* Opcion B: la clave foranea de autor_id hacia perfiles vuelve a existir. */
+    @Test
+    void unaOfertaConUnPerfilAutorInexistenteNoSePuedeGuardar() {
+        Publicacion huerfana = new Publicacion(UUID.randomUUID(), TipoPublicacion.MENTORIA, "Sin autor", "desc",
+                nuevaCategoria(), Modalidad.REMOTA, new SkillCoins(10), 60, 3);
+
+        assertThrows(RuntimeException.class, () -> publicaciones.guardar(huerfana));
+        assertTrue(publicaciones.buscarPorId(huerfana.getId()).isEmpty());
+    }
+
+    /* Un desafio guardado aparece en la busqueda, tambien en el orden por defecto (relevancia), y va despues de las ofertas. */
+    @Test
+    void unDesafioGuardadoApareceEnLaBusquedaOrdenadaPorRelevancia() {
+        Categoria categoria = nuevaCategoria();
+        Publicacion oferta = nuevaPublicacion(nuevoPerfil(), categoria, "Oferta", Modalidad.REMOTA, 50);
+        publicar(oferta);
+        Organizacion organizacion = new Organizacion("Org " + UUID.randomUUID(), nuevoUserId());
+        persistir(organizacion);
+        Publicacion desafio = Publicacion.crearDesafio(organizacion, "Desafio", "desc", categoria,
+                Modalidad.REMOTA, new SkillCoins(70), 60, 3);
+        publicaciones.guardar(desafio);
+        publicar(desafio);
+
+        Pagina<Publicacion> pagina = publicaciones.buscar(
+                new FiltrosBusqueda(null, categoria.getId(), null, null, null, null, null, OrdenPublicacion.RELEVANCIA), 0, 20);
+        assertEquals(List.of(oferta.getId(), desafio.getId()),
+                pagina.getElementos().stream().map(Publicacion::getId).toList());
+        assertEquals(2, pagina.getTotalElementos());
     }
 }
