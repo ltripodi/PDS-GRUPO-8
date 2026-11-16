@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
@@ -45,7 +46,8 @@ class MigracionesTest {
         String url = baseNueva();
 
         MigrateResult resultado = MigracionesBaseDeDatos.migrar(url, "sa", "");
-        assertEquals(4, resultado.migrationsExecuted, "V1 esquema, V2 datos demo, V3 limpieza, V4 version de billeteras");
+        assertEquals(5, resultado.migrationsExecuted,
+                "V1 esquema, V2 datos demo, V3 limpieza, V4 version de billeteras, V5 integridad y concurrencia");
         assertFalse(existeTabla(url, "registro_estado_publicacion"), "V3 la elimina");
 
         EntityManagerFactory emf = validarMapeoContra(url);
@@ -72,6 +74,25 @@ class MigracionesTest {
         } finally {
             em.close();
             emf.close();
+        }
+    }
+
+    /* V5: la base tambien rechaza un saldo negativo, una franja sobrevendida y una solicitud sin cliente valido. */
+    @Test
+    void laBaseRechazaDatosQueRompenLasReglas() throws SQLException {
+        String url = baseNueva();
+        MigracionesBaseDeDatos.migrar(url, "sa", "");
+
+        try (Connection c = DriverManager.getConnection(url, "sa", "")) {
+            assertThrows(SQLException.class, () -> c.createStatement()
+                    .executeUpdate("update billeteras set saldo = -1 where titular_id = 'bruno'"));
+            assertThrows(SQLException.class, () -> c.createStatement()
+                    .executeUpdate("update franjas_horarias set ocupados = cupo + 1"));
+            assertThrows(SQLException.class, () -> c.createStatement().executeUpdate(
+                    "insert into solicitudes (id, cliente_id, fecha_creacion, franja_id, publicacion_id) values ("
+                            + "X'09000000000000000000000000000001', X'03000000000000000000000000000099', "
+                            + "'2027-01-01 10:00:00', X'06000000000000000000000000000001', "
+                            + "X'05000000000000000000000000000001')"));
         }
     }
 

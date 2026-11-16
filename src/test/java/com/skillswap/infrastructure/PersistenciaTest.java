@@ -120,7 +120,21 @@ class PersistenciaTest {
         return publicacion;
     }
 
-    /* La transicion BORRADOR -> PUBLICADA todavia no esta implementada en el dominio, se fuerza por JPQL. */
+    /*
+     * Publicada por el dominio antes del primer guardado. No se guarda dos veces el mismo objeto:
+     * con optimistic locking (V5) el segundo merge de un objeto desconectado con version vieja falla.
+     */
+    private Publicacion nuevaPublicacionPublicada(Perfil autor, String titulo) {
+        Publicacion publicacion = new Publicacion(autor.getId(), TipoPublicacion.MENTORIA, titulo, "desc " + titulo,
+                nuevaCategoria(), Modalidad.REMOTA, new SkillCoins(40), 60, 3);
+        Instant ahora = Instant.now();
+        publicacion.getFranjas().add(new FranjaHoraria(ahora.plus(1, ChronoUnit.DAYS), ahora.plus(2, ChronoUnit.DAYS), 3));
+        publicacion.publicar(autor.getUserId());
+        publicaciones.guardar(publicacion);
+        return publicacion;
+    }
+
+    /* Atajo de los tests de consultas: fuerza PUBLICADA por JPQL sin pasar por el dominio. */
     private static void publicar(Publicacion publicacion) {
         JPAUtil.transaccion(em -> em
                 .createQuery("UPDATE Publicacion p SET p.estado = :estado WHERE p.id = :id")
@@ -253,9 +267,7 @@ class PersistenciaTest {
     void contratacionPersisteEstadoReservaPropuestasEHistorial() {
         Perfil cliente = nuevoPerfil();
         Perfil proveedor = nuevoPerfil();
-        Publicacion publicacion = nuevaPublicacion(proveedor, nuevaCategoria(), "Clase", Modalidad.REMOTA, 40);
-        publicacion.publicar(proveedor.getUserId()); // solo una publicacion publicada admite aceptar
-        publicaciones.guardar(publicacion);
+        Publicacion publicacion = nuevaPublicacionPublicada(proveedor, "Clase");
         FranjaHoraria franja = publicaciones.buscarPorId(publicacion.getId()).orElseThrow().getFranjas().get(0);
 
         Contratacion contratacion = new Contratacion(cliente.getId(), proveedor.getId(), new SkillCoins(40),
@@ -331,6 +343,54 @@ class PersistenciaTest {
                 .filter("ACEPTADA"::equals)
                 .count();
         assertEquals(1, aceptadas, "La contratacion que fallo debe quedar PENDIENTE (rollback)");
+    }
+
+    /*
+     * Aceptar y rechazar en simultaneo la misma contratacion: sin la version de Contratacion (V5) las dos
+     * confirmaban y la ultima pisaba el estado (por ejemplo, RECHAZADA con el cupo ocupado por una reserva).
+     */
+    @Test
+    void aceptarYRechazarEnSimultaneoLaMismaContratacionNoSePisan() throws Exception {
+        Perfil proveedor = nuevoPerfil();
+        Perfil cliente = nuevoPerfil();
+        Publicacion publicacion = nuevaPublicacionPublicada(proveedor, "Carrera");
+        Contratacion contratacion = new Contratacion(cliente.getId(), proveedor.getId(), new SkillCoins(40),
+                nuevaSolicitud(cliente, publicacion));
+        contrataciones.guardar(contratacion);
+
+        CyclicBarrier ambasLeyeron = new CyclicBarrier(2);
+        ExecutorService hilos = Executors.newFixedThreadPool(2);
+        List<Throwable> resultados;
+        try {
+            Future<Throwable> aceptar = hilos.submit(
+                    () -> aceptarEnTransaccion(contratacion.getId(), proveedor.getId(), ambasLeyeron));
+            Future<Throwable> rechazar = hilos.submit(() -> {
+                try {
+                    unidad.ejecutar(() -> {
+                        Contratacion leida = contrataciones.buscarPorId(contratacion.getId()).orElseThrow();
+                        esperar(ambasLeyeron);
+                        leida.rechazar(proveedor.getId());
+                        contrataciones.guardar(leida);
+                    });
+                    return null;
+                } catch (RuntimeException e) {
+                    return e;
+                }
+            });
+            resultados = new ArrayList<>(List.of(
+                    Optional.ofNullable(aceptar.get(30, TimeUnit.SECONDS)).orElse(SIN_ERROR),
+                    Optional.ofNullable(rechazar.get(30, TimeUnit.SECONDS)).orElse(SIN_ERROR)));
+        } finally {
+            hilos.shutdownNow();
+        }
+
+        assertEquals(1, resultados.stream().filter(r -> r == SIN_ERROR).count(), "Solo una debe confirmarse");
+        assertEquals(1, resultados.stream().filter(ConflictoConcurrenciaException.class::isInstance).count(),
+                "La otra falla por optimistic locking: " + resultados);
+        Contratacion final_ = contrataciones.buscarPorId(contratacion.getId()).orElseThrow();
+        int ocupados = publicaciones.buscarPorId(publicacion.getId()).orElseThrow().getFranjas().get(0).getOcupados();
+        assertEquals("ACEPTADA".equals(final_.getEstado()) ? 1 : 0, ocupados,
+                "El cupo ocupado coincide con el estado que quedo (" + final_.getEstado() + ")");
     }
 
     private static final Throwable SIN_ERROR = new Throwable("sin error");

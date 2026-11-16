@@ -148,6 +148,8 @@
             <basic name="fechaCreacion">
                 <column name="fecha_creacion"/>
             </basic>
+            <!-- Optimistic locking (V5): editar, pausar o cancelar en simultaneo no se pisan. -->
+            <version name="version"/>
             <many-to-one name="categoria" fetch="EAGER" optional="false">
                 <join-column name="categoria_id" nullable="false"/>
             </many-to-one>
@@ -271,6 +273,8 @@
             <basic name="estado">
                 <column nullable="false"/>
             </basic>
+            <!-- Optimistic locking (V5): aceptar y cancelar en simultaneo la misma contratacion no se pisan. -->
+            <version name="version"/>
             <one-to-many name="propuestas" fetch="EAGER" orphan-removal="true">
                 <join-column name="contratacion_id" insertable="false" updatable="false"/>
                 <cascade>

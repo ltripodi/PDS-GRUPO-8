@@ -33,6 +33,9 @@ public class Contratacion {
 
     private List<RegistroTransicion> historial = new ArrayList<>();
 
+    /* Optimistic locking: lo incrementa la persistencia; el dominio no lo modifica. */
+    private long version;
+
     protected Contratacion() {
     }
 
@@ -303,6 +306,10 @@ public class Contratacion {
 
     public Reserva getReserva() {
         return reserva;
+    }
+
+    public long getVersion() {
+        return version;
     }
 
     public List<PropuestaReprogramacion> getPropuestas() {

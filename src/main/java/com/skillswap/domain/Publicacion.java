@@ -54,6 +54,9 @@ public class Publicacion {
 
     private List<RegistroTransicion> historial = new ArrayList<>();
 
+    /* Optimistic locking: lo incrementa la persistencia; el dominio no lo modifica. */
+    private long version;
+
     protected Publicacion() {
     }
 
@@ -118,6 +121,10 @@ public class Publicacion {
                 precioBase, duracionMinutos, cupo);
         publicacion.organizacion = autora;
         return publicacion;
+    }
+
+    public long getVersion() {
+        return version;
     }
 
     public UUID getId() {

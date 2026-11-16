@@ -36,7 +36,7 @@ El proyecto usa Maven y separa el código por capas dentro de `com.skillswap`:
    ```
 
    Desde el IDE: ejecutar `com.skillswap.presentation.ConsolaSkillSwap` con la opción de VM `-Dnet.bytebuddy.experimental=true`.
-4. Al arrancar, Flyway crea las tablas y carga los datos demo (V1 a V4). La primera vez tarda unos segundos.
+4. Al arrancar, Flyway crea las tablas y carga los datos demo (V1 a V5). La primera vez tarda unos segundos.
 5. Iniciar sesión con un usuario demo (es un login simulado, sin clave):
 
    | userId | Rol en la demo |
@@ -79,7 +79,12 @@ DROP DATABASE skillswap;
   - `V2__datos_demo.sql`: datos de demostración (usuarios `ana`, `carla`, `bruno`, `diego` y `acme-admin`; el detalle está en el encabezado del script).
   - `V3__eliminar_registro_estado_publicacion.sql`: borra una tabla que no se usaba (ejemplo de cómo se cambia el esquema sin tocar V1).
   - `V4__version_billeteras.sql`: agrega la columna `version` a `billeteras` (optimistic locking: dos pagos simultáneos no se pisan el saldo).
-- Flyway anota en la tabla `flyway_schema_history` qué versiones aplicó, así que cada script corre una sola vez. Para cambiar el esquema se agrega `V5__descripcion.sql`; nunca se edita un script ya aplicado.
+  - `V5__integridad_y_concurrencia.sql`:
+    - `version` en `contrataciones` y `publicaciones`: aceptar y cancelar a la vez ya no se pisan.
+    - Claves foráneas que faltaban: cliente de contrataciones y solicitudes, franja de solicitudes y propuestas.
+    - CHECKs de saldo no negativo y de `ocupados <= cupo`.
+    - Índices de las consultas frecuentes.
+- Flyway anota en la tabla `flyway_schema_history` qué versiones aplicó, así que cada script corre una sola vez. Para cambiar el esquema se agrega `V6__descripcion.sql`; nunca se edita un script ya aplicado.
 - **Si ya tenías la base creada por Hibernate** (antes de Flyway), borrala una vez para que Flyway la arme de cero: `DROP DATABASE skillswap;`
 - Para volver a los datos demo originales: borrá la base y volvé a arrancar.
 - Usuario/clave por defecto: `root` / `root`. Si tu MySQL local usa otros, pasalos con `-Djakarta.persistence.jdbc.user=...` y `-Djakarta.persistence.jdbc.password=...` (ver "Cómo ejecutar la aplicación").
