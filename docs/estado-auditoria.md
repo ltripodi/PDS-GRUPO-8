@@ -1,6 +1,6 @@
 # Estado de la auditoría de `bauty3` (16/11/2026)
 
-174 tests pasan sobre H2. La demo guiada corre de punta a punta sobre H2 en modo MySQL, con Flyway aplicando V1 a V5. **Todavía no se probó contra un MySQL real.**
+177 tests pasan sobre H2. La app se probó contra **MySQL 8.4 real**: Flyway aplicó las migraciones desde cero y la ventana funciona con los datos demo.
 
 ## Hecho
 
@@ -31,6 +31,8 @@
 - No se puede pagar una contratación de una publicación cancelada.
 - `rechazarReprogramacion` solo funciona en ACEPTADA o CONFIRMADA.
 - Dar de baja un perfil con contrataciones abiertas falla.
+- El representante de una organización (sin perfil) ve en "Mis contrataciones" las solicitudes de sus desafíos, las acepta y cobra. Hay un test de integración (`DesafioIntegracionTest`).
+- Datos demo: la organización es UADE y la representa `uade-admin` (migraciones V6 y V7).
 - `Perfil.recalcularReputacion` solo cuenta las calificaciones dirigidas a ese perfil.
 
 ### Persistencia y concurrencia (`V5`)
@@ -44,7 +46,7 @@
 
 ### Entregables del grupo
 
-- [ ] **Probar en MySQL real:** `DROP DATABASE skillswap;`, después `mvn compile exec:java` y la opción D.
+- [x] **Probar en MySQL real** (16/11, MySQL 8.4).
 - [ ] **UML en StarUML (`.mdj`).**
 - [ ] **Informe PDF de decisiones de diseño.**
 - [ ] **Cobertura de aplicación:** faltan tests de `WalletService`, de `PerfilService` y de los controllers de Perfil, Publicacion y Wallet.
@@ -56,7 +58,6 @@
 - [ ] Paginación en memoria en `ContratacionService.listar` y en `WalletService`.
 - [ ] Casi todo el mapeo es `EAGER`, y `buscarCandidatas` trae todas las publicaciones.
 - [ ] Un desafío no se puede calificar: la organización no tiene `Perfil` ni reputación.
-- [ ] `listarPorParticipante` no lista las contrataciones de un desafío para el representante de la organización.
 - [ ] Menores: `SkillCoins` sin `equals`/`hashCode`; `Movimiento.tipo` es `String`; algunos getters devuelven las listas internas; `PagoService` recibe un `CalculadorPrecio` que no usa.
 
 ### Decisiones para el grupo

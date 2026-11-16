@@ -236,18 +236,32 @@ public class ContratacionService {
         return resultado.get();
     }
 
-    /* Dentro de la transaccion para poder navegar relaciones LAZY al armar el DTO. */
+    /*
+     * Dentro de la transaccion para poder navegar relaciones LAZY al armar el DTO.
+     * El usuario puede ser un perfil o el representante de una organizacion (sin perfil): en ese caso
+     * ve las contrataciones de los desafios de la organizacion, donde es el proveedor.
+     */
     public List<ContratacionDTO> listar(String userId) {
         AtomicReference<List<ContratacionDTO>> resultado = new AtomicReference<>();
 
         transacciones.ejecutar(() -> {
-            UUID actorId = obtenerPerfil(userId).getId();
+            UUID perfilId = perfiles.buscarPorUserId(validarUserId(userId)).map(Perfil::getId).orElse(null);
+            if (perfilId == null && organizaciones.buscarPorUserIdAutorizado(userId).isEmpty()) {
+                throw new IllegalArgumentException("No existe el perfil indicado");
+            }
             resultado.set(contrataciones.listarPorParticipante(userId).stream()
-                    .map(contratacion -> aDTO(contratacion, actorId))
+                    .map(contratacion -> aDTO(contratacion, perfilId))
                     .collect(Collectors.toList()));
         });
 
         return resultado.get();
+    }
+
+    private static String validarUserId(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("El userId es obligatorio");
+        }
+        return userId;
     }
 
     /* Consigna 4.3: listados paginados. */
@@ -316,6 +330,7 @@ public class ContratacionService {
         return userIds;
     }
 
+    /* perfilId del que mira (null si es una organizacion): si no es el cliente, la contraparte es el cliente. */
     private ContratacionDTO aDTO(Contratacion contratacion, UUID actorId) {
         UUID contraparteId = contratacion.getClienteId().equals(actorId)
                 ? contratacion.getProveedorId()

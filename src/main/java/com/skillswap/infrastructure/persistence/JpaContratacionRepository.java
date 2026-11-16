@@ -25,6 +25,8 @@ public class JpaContratacionRepository extends SimpleJpaRepository<Contratacion,
                 .createQuery("SELECT c FROM Contratacion c "
                         + "WHERE c.clienteId IN (SELECT p.id FROM Perfil p WHERE p.userId = :userId) "
                         + "OR c.proveedorId IN (SELECT p.id FROM Perfil p WHERE p.userId = :userId) "
+                        // En un desafio el proveedor es la organizacion: la ve quien la representa.
+                        + "OR c.proveedorId IN (SELECT o.id FROM Organizacion o WHERE o.userIdAutorizado = :userId) "
                         + "ORDER BY c.solicitud.fechaCreacion DESC, c.id", Contratacion.class)
                 .setParameter("userId", userId)
                 .getResultList());
