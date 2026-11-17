@@ -325,7 +325,7 @@ class BusquedaYRecomendacionTest {
     }
 
     private Publicacion publicar(Publicacion publicacion, String actorId, Habilidad... habilidades) {
-        publicacion.getHabilidades().addAll(Set.of(habilidades));
+        publicacion.reemplazarHabilidades(Set.of(habilidades));
         publicacion.agregarFranja(new FranjaHoraria(Instant.parse("2030-01-01T10:00:00Z"),
                 Instant.parse("2030-01-01T11:00:00Z"), 2));
         publicacion.publicar(actorId);

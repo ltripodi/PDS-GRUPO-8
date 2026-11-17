@@ -2,6 +2,7 @@ package com.skillswap.infrastructure;
 
 import com.skillswap.application.compartido.ErrorAplicacion;
 import com.skillswap.application.compartido.UnidadTransaccional;
+import com.skillswap.application.calificacion.CalificacionService;
 import com.skillswap.application.contratacion.ContratacionDTO;
 import com.skillswap.application.contratacion.ContratacionService;
 import com.skillswap.application.contratacion.DatosSolicitudDTO;
@@ -21,6 +22,7 @@ import com.skillswap.domain.publicacion.Publicacion;
 import com.skillswap.infrastructure.evento.PublicadorEventosEnMemoria;
 import com.skillswap.infrastructure.persistence.JPAUtil;
 import com.skillswap.infrastructure.persistence.JpaBilleteraRepository;
+import com.skillswap.infrastructure.persistence.JpaCalificacionRepository;
 import com.skillswap.infrastructure.persistence.JpaContratacionRepository;
 import com.skillswap.infrastructure.persistence.JpaOrganizacionRepository;
 import com.skillswap.infrastructure.persistence.JpaPagoRepository;
@@ -29,6 +31,7 @@ import com.skillswap.infrastructure.persistence.JpaPromocionRepository;
 import com.skillswap.infrastructure.persistence.JpaPublicacionRepository;
 import com.skillswap.infrastructure.persistence.JpaUnidadTransaccional;
 import com.skillswap.presentation.controller.ContratacionController;
+import com.skillswap.presentation.controller.CalificacionController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +56,7 @@ class DesafioIntegracionTest {
     private final BilleteraRepository billeteras = new JpaBilleteraRepository();
     private final JpaContratacionRepository contrataciones = new JpaContratacionRepository();
     private final JpaOrganizacionRepository organizaciones = new JpaOrganizacionRepository();
+    private final JpaCalificacionRepository calificacionesRepo = new JpaCalificacionRepository();
     private final UnidadTransaccional unidad = new JpaUnidadTransaccional();
     private final PublicadorEventosEnMemoria publicador = new PublicadorEventosEnMemoria();
     private final PagoService pagos = new PagoService(contrataciones, billeteras, perfiles, organizaciones, unidad,
@@ -61,6 +65,8 @@ class DesafioIntegracionTest {
             new JpaPublicacionRepository(), perfiles, organizaciones, unidad, publicador, pagos,
             new PoliticaSinReintegro(), new JpaPromocionRepository());
     private final ContratacionController controller = new ContratacionController(servicio, pagos);
+    private final CalificacionController calificaciones = new CalificacionController(
+            new CalificacionService(calificacionesRepo, contrataciones, perfiles, organizaciones, unidad));
 
     @Test
     void elRepresentanteVeLaSolicitudDelDesafioLaAceptaYCobra() {
@@ -92,6 +98,29 @@ class DesafioIntegracionTest {
         assertEquals(200, billeteras.buscarPorTitular(profesional.getUserId()).getSaldo().getValor());
         assertEquals(300, billeteras.buscarPorTitular(representante).getSaldo().getValor(),
                 "el pago del desafio lo cobra la organizacion, en la billetera de su representante");
+    }
+
+    @Test
+    void lasDosPartesDeUnDesafioCompletadoPuedenCalificarse() {
+        String representante = "rep-" + UUID.randomUUID();
+        Organizacion organizacion = new Organizacion("Org " + representante, representante);
+        Perfil profesional = nuevoPerfil("Pro");
+        fondear(profesional, 500);
+        Publicacion desafio = desafioPublicado(organizacion, 300);
+
+        UUID id = controller.solicitar(profesional.getUserId(), desafio.getId(), "Me interesa",
+                desafio.getFranjas().get(0).getId(), "Ganar el desafio");
+        controller.aceptar(representante, id);
+        controller.pagar(profesional.getUserId(), id);
+        controller.iniciar(representante, id);
+        controller.completar(representante, id);
+
+        calificaciones.calificar(representante, id, profesional.getUserId(), 4);
+        calificaciones.calificar(profesional.getUserId(), id, representante, 5);
+
+        assertEquals(4.0, perfiles.buscarPorUserId(profesional.getUserId()).orElseThrow().getReputacion());
+        assertTrue(calificacionesRepo.existe(id, representante));
+        assertTrue(calificacionesRepo.existe(id, profesional.getUserId()));
     }
 
     @Test

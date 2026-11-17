@@ -145,7 +145,7 @@ class PaginacionJpaIntegracionTest {
         String titular = "user-" + UUID.randomUUID();
         Billetera billetera = new Billetera(titular);
         for (int monto = 1; monto <= 5; monto++) {
-            billetera.getMovimientos().add(new Movimiento(titular, new SkillCoins(monto), "ACREDITACION"));
+            billetera.acreditar(new SkillCoins(monto));
         }
         billeteras.guardar(billetera);
 

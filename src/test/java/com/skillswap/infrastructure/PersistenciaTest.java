@@ -19,7 +19,6 @@ import com.skillswap.domain.busqueda.OrdenPublicacion;
 import com.skillswap.domain.calificacion.Calificacion;
 import com.skillswap.domain.compartido.SkillCoins;
 import com.skillswap.domain.contratacion.Contratacion;
-import com.skillswap.domain.contratacion.PropuestaReprogramacion;
 import com.skillswap.domain.contratacion.Solicitud;
 import com.skillswap.domain.evento.EventoDominio;
 import com.skillswap.domain.evento.TipoEvento;
@@ -127,7 +126,7 @@ class PersistenciaTest {
         Publicacion publicacion = new Publicacion(autor.getId(), TipoPublicacion.MENTORIA, titulo, "desc " + titulo,
                 categoria, modalidad, new SkillCoins(precio), 60, 3);
         Instant ahora = Instant.now();
-        publicacion.getFranjas().add(new FranjaHoraria(ahora.plus(1, ChronoUnit.DAYS), ahora.plus(2, ChronoUnit.DAYS), 3));
+        publicacion.agregarFranja(new FranjaHoraria(ahora.plus(1, ChronoUnit.DAYS), ahora.plus(2, ChronoUnit.DAYS), 3));
         publicaciones.guardar(publicacion);
         return publicacion;
     }
@@ -140,7 +139,8 @@ class PersistenciaTest {
         Publicacion publicacion = new Publicacion(autor.getId(), TipoPublicacion.MENTORIA, titulo, "desc " + titulo,
                 nuevaCategoria(), Modalidad.REMOTA, new SkillCoins(40), 60, 3);
         Instant ahora = Instant.now();
-        publicacion.getFranjas().add(new FranjaHoraria(ahora.plus(1, ChronoUnit.DAYS), ahora.plus(2, ChronoUnit.DAYS), 3));
+        publicacion.agregarFranja(new FranjaHoraria(ahora.plus(1, ChronoUnit.DAYS), ahora.plus(2, ChronoUnit.DAYS), 3));
+        publicacion.agregarFranja(new FranjaHoraria(ahora.plus(3, ChronoUnit.DAYS), ahora.plus(4, ChronoUnit.DAYS), 3));
         publicacion.publicar(autor.getUserId());
         publicaciones.guardar(publicacion);
         return publicacion;
@@ -178,9 +178,9 @@ class PersistenciaTest {
         persistir(habilidad);
 
         Perfil perfil = new Perfil(nuevoUserId(), "Ana", "bio", ZoneId.of("America/Argentina/Buenos_Aires"));
-        perfil.getHabilidades().add(habilidad);
-        perfil.getIntereses().add("musica");
-        perfil.getDisponibilidad().add(new DisponibilidadPerfil(Instant.parse("2030-01-01T10:00:00Z"), Instant.parse("2030-01-01T12:00:00Z")));
+        perfil.agregarHabilidad(habilidad);
+        perfil.actualizarIntereses(Set.of("musica"));
+        perfil.definirDisponibilidad(List.of(new DisponibilidadPerfil(Instant.parse("2030-01-01T10:00:00Z"), Instant.parse("2030-01-01T12:00:00Z"))));
         perfiles.guardar(perfil);
 
         Perfil leido = perfiles.buscarPorUserId(perfil.getUserId()).orElseThrow();
@@ -230,11 +230,16 @@ class PersistenciaTest {
     void busquedaFiltraOrdenaYPagina() {
         Perfil autor = nuevoPerfil();
         Categoria categoria = nuevaCategoria();
+        Habilidad habilidad = new Habilidad("Musica-" + UUID.randomUUID());
+        persistir(habilidad);
 
         Publicacion barata = nuevaPublicacion(autor, categoria, "Guitarra basica", Modalidad.REMOTA, 10);
         Publicacion media = nuevaPublicacion(autor, categoria, "Guitarra avanzada", Modalidad.PRESENCIAL, 50);
         Publicacion cara = nuevaPublicacion(autor, categoria, "Piano", Modalidad.REMOTA, 90);
         nuevaPublicacion(autor, categoria, "Borrador sin publicar", Modalidad.REMOTA, 5);
+        Publicacion barataConHabilidad = publicaciones.buscarPorId(barata.getId()).orElseThrow();
+        barataConHabilidad.reemplazarHabilidades(Set.of(habilidad));
+        publicaciones.guardar(barataConHabilidad);
         publicar(barata);
         publicar(media);
         publicar(cara);
@@ -259,11 +264,6 @@ class PersistenciaTest {
         assertEquals(0, publicaciones.buscar(new FiltrosBusqueda(null, categoria.getId(), null, null, null, null, 1.0, OrdenPublicacion.REPUTACION), 0, 10).getTotalElementos());
 
         // Habilidad
-        Habilidad habilidad = new Habilidad("Musica-" + UUID.randomUUID());
-        persistir(habilidad);
-        Publicacion conHabilidad = publicaciones.buscarPorId(barata.getId()).orElseThrow();
-        conHabilidad.getHabilidades().add(habilidad);
-        publicaciones.guardar(conHabilidad);
         Pagina<Publicacion> porHabilidad = publicaciones.buscar(new FiltrosBusqueda(null, null, null, null, null, habilidad.getId(), null, null), 0, 10);
         assertEquals(1, porHabilidad.getTotalElementos());
 
@@ -285,7 +285,7 @@ class PersistenciaTest {
         Contratacion contratacion = new Contratacion(cliente.getId(), proveedor.getId(), new SkillCoins(40),
                 nuevaSolicitud(cliente, publicacion));
         contratacion.aceptar(proveedor.getId()); // crea la reserva y registra la transicion en el historial
-        contratacion.getPropuestas().add(new PropuestaReprogramacion(contratacion.getId(), UUID.randomUUID()));
+        contratacion.proponerReprogramacion(cliente.getId(), publicacion.getFranjas().get(1));
         contrataciones.guardar(contratacion);
 
         Contratacion leida = contrataciones.buscarPorId(contratacion.getId()).orElseThrow();
@@ -319,7 +319,7 @@ class PersistenciaTest {
                 nuevaCategoria(), Modalidad.REMOTA, new SkillCoins(40), 60, 1);
         Instant ahora = Instant.now();
         FranjaHoraria franja = new FranjaHoraria(ahora.plus(1, ChronoUnit.DAYS), ahora.plus(2, ChronoUnit.DAYS), 1);
-        publicacion.getFranjas().add(franja);
+        publicacion.agregarFranja(franja);
         publicacion.publicar(proveedor.getUserId()); // solo una publicacion publicada admite aceptar
         publicaciones.guardar(publicacion);
 
@@ -455,11 +455,11 @@ class PersistenciaTest {
         assertNull(billeteras.buscarPorTitular(titular));
 
         Billetera billetera = new Billetera(titular);
-        billetera.getMovimientos().add(new Movimiento(titular, new SkillCoins(50), "ACREDITACION"));
+        billetera.acreditar(new SkillCoins(50));
         billeteras.guardar(billetera);
 
         Billetera leida = billeteras.buscarPorTitular(titular);
-        assertEquals(0, leida.getSaldo().getValor());
+        assertEquals(50, leida.getSaldo().getValor());
 
         List<Movimiento> movimientos = billeteras.listarMovimientos(titular);
         assertEquals(1, movimientos.size());

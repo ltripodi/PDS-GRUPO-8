@@ -294,7 +294,7 @@ class BusquedaYRecomendacionIntegracionTest {
     }
 
     private Publicacion publicar(Publicacion publicacion, String actorId, Habilidad... habilidades) {
-        publicacion.getHabilidades().addAll(List.of(habilidades));
+        publicacion.reemplazarHabilidades(List.of(habilidades));
         Instant inicio = Instant.now().plus(1, ChronoUnit.DAYS);
         publicacion.agregarFranja(new FranjaHoraria(inicio, inicio.plus(1, ChronoUnit.HOURS), 2));
         publicacion.publicar(actorId);

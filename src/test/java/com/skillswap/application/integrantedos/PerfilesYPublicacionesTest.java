@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -193,7 +194,7 @@ class PerfilesYPublicacionesTest {
             Publicacion publicacion = Publicacion.crearOferta(autor, TipoPublicacion.MENTORIA, titulo, "desc",
                     categoria, Modalidad.REMOTA, new SkillCoins(10), 60, 3);
             publicacion.agregarFranja(franja());
-            publicacion.getHabilidades().add(java);
+            publicacion.reemplazarHabilidades(Set.of(java));
             return publicacion;
         }
 

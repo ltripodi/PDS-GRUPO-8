@@ -154,6 +154,25 @@ public class Contratacion {
         return estadoActual.permiteCalificar();
     }
 
+    /* La regla pertenece a la contratacion: conoce su estado y las dos partes involucradas. */
+    public void validarCalificacion(UUID calificadorId, UUID calificadoId) {
+        if (calificadorId == null || calificadoId == null) {
+            throw new IllegalArgumentException("Calificador y calificado son obligatorios");
+        }
+        if (!"COMPLETADA".equals(getEstado())) {
+            throw new IllegalStateException("Solo una contratacion completada puede calificarse");
+        }
+        if (calificadorId.equals(calificadoId)) {
+            throw new IllegalArgumentException("Una persona no puede calificarse a si misma");
+        }
+        validarParticipante(calificadorId, "calificar la contratacion");
+
+        UUID contraparte = clienteId.equals(calificadorId) ? proveedorId : clienteId;
+        if (!contraparte.equals(calificadoId)) {
+            throw new IllegalArgumentException("La calificacion debe dirigirse a la otra parte de la contratacion");
+        }
+    }
+
     /* Reprogramacion 1/2: quien propone ya acepta; falta la otra parte. */
     public void proponerReprogramacion(UUID actorId, FranjaHoraria nuevaFranja) {
         validarParticipante(actorId, "proponer una reprogramacion de");
@@ -318,7 +337,7 @@ public class Contratacion {
     }
 
     public List<PropuestaReprogramacion> getPropuestas() {
-        return propuestas;
+        return List.copyOf(propuestas);
     }
 
     /* Historial inmutable (seccion 5): solo registrarTransicion agrega entradas. */

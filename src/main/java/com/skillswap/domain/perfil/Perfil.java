@@ -72,11 +72,11 @@ public class Perfil {
     }
 
     public Set<Habilidad> getHabilidades() {
-        return habilidades;
+        return habilidades == null ? Set.of() : Set.copyOf(habilidades);
     }
 
     public Set<String> getIntereses() {
-        return intereses;
+        return intereses == null ? Set.of() : Set.copyOf(intereses);
     }
 
     public boolean isActivo() {
@@ -88,7 +88,7 @@ public class Perfil {
     }
 
     public List<DisponibilidadPerfil> getDisponibilidad() {
-        return disponibilidad;
+        return disponibilidad == null ? List.of() : List.copyOf(disponibilidad);
     }
 
     public PreferenciaNotificacion getPreferenciaNotificacion() {
