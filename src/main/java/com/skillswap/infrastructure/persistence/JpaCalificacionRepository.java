@@ -3,8 +3,6 @@ package com.skillswap.infrastructure.persistence;
 import com.skillswap.application.calificacion.CalificacionRepository;
 import com.skillswap.domain.calificacion.Calificacion;
 
-import jakarta.persistence.Id;
-
 import java.util.List;
 import java.util.UUID;
 

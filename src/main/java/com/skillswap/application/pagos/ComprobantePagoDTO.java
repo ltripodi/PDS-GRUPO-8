@@ -3,7 +3,6 @@ package com.skillswap.application.pagos;
 import java.time.Instant;
 import java.util.UUID;
 
-/** DTO. */
 public class ComprobantePagoDTO {
     private final UUID pagoId;
     private final UUID contratacionId;

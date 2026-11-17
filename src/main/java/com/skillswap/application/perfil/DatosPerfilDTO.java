@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/** DTO. */
 public class DatosPerfilDTO {
     private final String nombreVisible;
     private final String biografia;

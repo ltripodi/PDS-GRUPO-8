@@ -63,8 +63,4 @@ public class Calificacion {
     public Contratacion getContratacion() {
         return contratacion;
     }
-
-    public boolean esVerificada() {
-        return contratacion != null && "COMPLETADA".equals(contratacion.getEstado());
-    }
 }

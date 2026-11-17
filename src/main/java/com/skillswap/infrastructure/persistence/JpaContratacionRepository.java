@@ -4,8 +4,6 @@ import com.skillswap.application.compartido.Pagina;
 import com.skillswap.application.contratacion.ContratacionRepository;
 import com.skillswap.domain.contratacion.Contratacion;
 
-import jakarta.persistence.Id;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

@@ -3,8 +3,6 @@ package com.skillswap.infrastructure.persistence;
 import com.skillswap.application.pagos.PagoRepository;
 import com.skillswap.domain.pagos.Pago;
 
-import jakarta.persistence.Id;
-
 import java.util.Optional;
 import java.util.UUID;
 

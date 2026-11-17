@@ -165,8 +165,6 @@ public class PagoService {
         billeteras.guardar(billetera);
     }
 
-    // ----------------------------- helpers
-
     private Billetera obtenerOCrearBilletera(String userId) {
         Billetera b = billeteras.buscarPorTitular(userId);
         return b != null ? b : new Billetera(userId);

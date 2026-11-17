@@ -5,8 +5,6 @@ import com.skillswap.application.pagos.BilleteraRepository;
 import com.skillswap.domain.pagos.Billetera;
 import com.skillswap.domain.pagos.Movimiento;
 
-import jakarta.persistence.Id;
-
 import java.util.List;
 
 public class JpaBilleteraRepository extends SimpleJpaRepository<Billetera, String> implements BilleteraRepository {

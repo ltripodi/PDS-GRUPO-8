@@ -29,11 +29,4 @@ public class DisponibilidadPerfil {
     public boolean esValida() {
         return inicio != null && fin != null && inicio.isBefore(fin);
     }
-
-    public boolean seSuperponeCon(DisponibilidadPerfil otra) {
-        if (otra == null || !esValida() || !otra.esValida()) {
-            return false;
-        }
-        return inicio.isBefore(otra.fin) && otra.inicio.isBefore(fin);
-    }
 }

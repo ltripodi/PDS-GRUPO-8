@@ -3,7 +3,6 @@ package com.skillswap.application.perfil;
 import java.util.List;
 import java.util.UUID;
 
-/** DTO. */
 public class PerfilPublicoDTO {
     private final String userId;
     private final String nombreVisible;

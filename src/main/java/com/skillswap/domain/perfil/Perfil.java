@@ -116,14 +116,6 @@ public class Perfil {
         habilidades.add(habilidad);
     }
 
-    public void quitarHabilidad(Habilidad habilidad) {
-        asegurarActivo();
-        if (habilidad == null) {
-            throw new IllegalArgumentException("La habilidad es obligatoria");
-        }
-        habilidades.remove(habilidad);
-    }
-
     public void definirDisponibilidad(List<DisponibilidadPerfil> intervalos) {
         asegurarActivo();
         if (intervalos == null || intervalos.stream().anyMatch(intervalo -> intervalo == null || !intervalo.esValida())) {
