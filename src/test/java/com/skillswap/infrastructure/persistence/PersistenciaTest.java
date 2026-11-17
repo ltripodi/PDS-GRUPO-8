@@ -1,4 +1,4 @@
-package com.skillswap.infrastructure;
+package com.skillswap.infrastructure.persistence;
 import com.skillswap.application.busqueda.FiltrosBusqueda;
 import com.skillswap.application.calificacion.CalificacionRepository;
 import com.skillswap.application.compartido.ConflictoConcurrenciaException;
@@ -39,17 +39,6 @@ import com.skillswap.domain.publicacion.Publicacion;
 import com.skillswap.domain.publicacion.TipoPublicacion;
 import com.skillswap.infrastructure.notificacion.CanalInterno;
 import com.skillswap.infrastructure.evento.PublicadorEventosEnMemoria;
-import com.skillswap.infrastructure.persistence.JpaBilleteraRepository;
-import com.skillswap.infrastructure.persistence.JpaCalificacionRepository;
-import com.skillswap.infrastructure.persistence.JpaContratacionRepository;
-import com.skillswap.infrastructure.persistence.JpaNotificacionRepository;
-import com.skillswap.infrastructure.persistence.JpaOrganizacionRepository;
-import com.skillswap.infrastructure.persistence.JpaPagoRepository;
-import com.skillswap.infrastructure.persistence.JpaPerfilRepository;
-import com.skillswap.infrastructure.persistence.JpaPublicacionRepository;
-import com.skillswap.infrastructure.persistence.JpaSolicitudRepository;
-import com.skillswap.infrastructure.persistence.JpaUnidadTransaccional;
-import com.skillswap.infrastructure.persistence.JPAUtil;
 
 import org.junit.jupiter.api.Test;
 

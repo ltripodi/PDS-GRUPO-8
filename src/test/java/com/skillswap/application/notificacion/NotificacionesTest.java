@@ -1,11 +1,8 @@
-package com.skillswap.application.integrantedos;
+package com.skillswap.application.notificacion;
 
+import com.skillswap.application.DoblesEnMemoria;
 import com.skillswap.application.compartido.ErrorAplicacion;
 import com.skillswap.application.compartido.Pagina;
-import com.skillswap.application.notificacion.CanalEnvio;
-import com.skillswap.application.notificacion.NotificacionDTO;
-import com.skillswap.application.notificacion.NotificacionesObserver;
-import com.skillswap.application.notificacion.NotificacionService;
 import com.skillswap.domain.evento.EventoDominio;
 import com.skillswap.domain.evento.ObservadorEvento;
 import com.skillswap.domain.evento.TipoEvento;

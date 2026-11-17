@@ -134,9 +134,9 @@ Los dos commits se verificaron por separado: cada uno compila y pasa los tests s
 ---
 
 ## 5. Tests
-- **Ubicación:** `test/.../application/integrantedos/` y `test/.../infrastructure/integrantedos/`
-  - Unitarios: `BusquedaYRecomendacionTest`, `NotificacionesTest`, `PerfilesYPublicacionesTest`; doble de prueba compartido: `DoblesEnMemoria`.
-  - Integración con H2: `BusquedaYRecomendacionIntegracionTest`, que incluye un test que cuenta consultas con las estadísticas de Hibernate para detectar N+1 en búsqueda y recomendación; y `NotificacionesIntegracionTest`.
+- **Ubicación:** por módulo, en los paquetes espejo de `src/main` (los tests ya no se agrupan por integrante).
+  - Unitarios: `application/busqueda/BusquedaYRecomendacionTest`, `application/notificacion/NotificacionesTest`, `application/perfil/BajaDePerfilTest` y `domain/publicacion/PublicacionTest` (autor de una publicación); doble de prueba compartido: `application/DoblesEnMemoria`.
+  - Integración con H2 (`infrastructure/persistence`): `BusquedaYRecomendacionIntegracionTest`, que incluye un test que cuenta consultas con las estadísticas de Hibernate para detectar N+1 en búsqueda y recomendación; y `NotificacionesIntegracionTest`.
 - **Suite completa:** 118 tests, 0 fallas (`mvn clean test`).
 - **No probado contra MySQL real:** los tests usan H2 en modo MySQL. Verificar `NULLS LAST`, el `CASE WHEN ... LIKE ... ESCAPE` y el índice nuevo con `hbm2ddl=update`.
 

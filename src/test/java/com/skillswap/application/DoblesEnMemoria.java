@@ -1,4 +1,4 @@
-package com.skillswap.application.integrantedos;
+package com.skillswap.application;
 
 import com.skillswap.application.busqueda.FiltrosBusqueda;
 import com.skillswap.application.compartido.Pagina;
@@ -28,14 +28,14 @@ import java.util.UUID;
 
 /**
  * Repositorios en memoria para probar casos de uso sin base de datos.
- * No es una clase de test: la usan {@link NotificacionesTest} y {@link PerfilesYPublicacionesTest}.
+ * No es una clase de test: la comparten los tests de casos de uso (por ejemplo NotificacionesTest y BajaDePerfilTest).
  */
-final class DoblesEnMemoria {
+public final class DoblesEnMemoria {
 
     private DoblesEnMemoria() {
     }
 
-    static final class Perfiles implements PerfilRepository {
+    public static final class Perfiles implements PerfilRepository {
         private final Map<String, Perfil> porUserId = new LinkedHashMap<>();
         private int guardados;
 
@@ -56,12 +56,12 @@ final class DoblesEnMemoria {
         }
 
         /** Cantidad de veces que se llamo a guardar(). */
-        int guardados() {
+        public int guardados() {
             return guardados;
         }
     }
 
-    static final class Organizaciones implements OrganizacionRepository {
+    public static final class Organizaciones implements OrganizacionRepository {
         private final Map<UUID, Organizacion> porId = new HashMap<>();
 
         @Override
@@ -76,7 +76,7 @@ final class DoblesEnMemoria {
     }
 
     /** Devuelve las notificaciones en el orden en que se guardaron. */
-    static final class Notificaciones implements NotificacionRepository {
+    public static final class Notificaciones implements NotificacionRepository {
         private final List<Notificacion> guardadas = new ArrayList<>();
 
         @Override
@@ -104,16 +104,16 @@ final class DoblesEnMemoria {
         }
 
         /* Para verificar en los tests: todas las del destinatario, sin paginar. */
-        List<Notificacion> de(String destinatarioId) {
+        public List<Notificacion> de(String destinatarioId) {
             return guardadas.stream().filter(n -> n.esDe(destinatarioId)).toList();
         }
     }
 
-    static final class Contrataciones implements ContratacionRepository {
+    public static final class Contrataciones implements ContratacionRepository {
         private final Map<UUID, Contratacion> porId = new LinkedHashMap<>();
         private final Perfiles perfiles;
 
-        Contrataciones(Perfiles perfiles) {
+        public Contrataciones(Perfiles perfiles) {
             this.perfiles = perfiles;
         }
 
@@ -138,12 +138,12 @@ final class DoblesEnMemoria {
      * buscar() no filtra ni ordena (eso lo hace la consulta JPA y se prueba en PersistenciaTest):
      * solo devuelve las publicadas, paginadas.
      */
-    static final class Publicaciones implements PublicacionRepository {
+    public static final class Publicaciones implements PublicacionRepository {
         private final Map<UUID, Publicacion> porId = new LinkedHashMap<>();
         private final Perfiles perfiles;
 
         /** Con los perfiles, buscarActivasPorAutor pasa de userId a id de Perfil, como la consulta JPA. */
-        Publicaciones(Perfiles perfiles) {
+        public Publicaciones(Perfiles perfiles) {
             this.perfiles = perfiles;
         }
 
@@ -193,7 +193,7 @@ final class DoblesEnMemoria {
     }
 
     /** Sin solicitudes registradas: la popularidad reciente es cero para todas. */
-    static final class Solicitudes implements SolicitudRepository {
+    public static final class Solicitudes implements SolicitudRepository {
         private final Map<UUID, Integer> recientes = new HashMap<>();
 
         @Override

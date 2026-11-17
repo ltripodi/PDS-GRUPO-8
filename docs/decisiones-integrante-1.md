@@ -24,14 +24,14 @@ Esto aplica **Information Expert** y **GRASP Controller**: las entidades conocen
 - **Decisión del equipo:** `CalificacionService` resuelve al participante en el contexto de la contratación: puede ser un `Perfil` o la `Organizacion` representada por el `userId`. `Contratacion.validarCalificacion(...)` conserva en el dominio las reglas de estado, participación y contraparte.
 - **Consecuencia:** el representante puede calificar al perfil participante y el perfil puede emitir una calificación verificada hacia la organización. Sólo si el destinatario es un `Perfil` se recalcula reputación, porque la consigna obliga reputación pública para perfiles, no para organizaciones.
 - **Alternativa descartada:** agregar reputación pública a `Organizacion`. Habría ampliado el modelo, los DTOs y la interfaz sin que el TP lo exija.
-- **Evidencia:** `IntegranteUnoTest.lasDosPartesDeUnDesafioPuedenCalificarseYSoloElPerfilRecalculaReputacion` y `DesafioIntegracionTest.lasDosPartesDeUnDesafioCompletadoPuedenCalificarse`.
+- **Evidencia:** `CalificacionServiceTest.lasDosPartesDeUnDesafioPuedenCalificarseYSoloElPerfilRecalculaReputacion` y `DesafioIntegracionTest.lasDosPartesDeUnDesafioCompletadoPuedenCalificarse`.
 
 ### Encapsulación de colecciones de agregados
 
 - **Problema:** las colecciones de `Perfil`, `Publicacion`, `Billetera` y `Contratacion` se exponían mutables. Un cliente podía alterar habilidades, franjas, movimientos o propuestas sin validar el estado del agregado.
 - **Decisión:** sus getters ahora devuelven copias inmutables; las modificaciones se hacen por métodos de dominio (`agregarFranja`, `reemplazarHabilidades`, `acreditar`, `proponerReprogramacion`, etc.).
 - **Principios:** protege invariantes por *Information Expert* y encapsulación; los tests preparan los escenarios usando las mismas operaciones válidas que producción.
-- **Evidencia:** `IntegranteUnoTest.losGettersDeColeccionesDelDominioNoPermitenModificarElEstadoInterno`.
+- **Evidencia:** `ColeccionesDelDominioTest.losGettersDeColeccionesDelDominioNoPermitenModificarElEstadoInterno`.
 
 ## Actualización requerida en StarUML
 

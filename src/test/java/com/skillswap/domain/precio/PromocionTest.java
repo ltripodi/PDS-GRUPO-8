@@ -1,10 +1,6 @@
-package com.skillswap.domain;
+package com.skillswap.domain.precio;
 
 import com.skillswap.domain.compartido.SkillCoins;
-import com.skillswap.domain.precio.CalculadorPrecio;
-import com.skillswap.domain.precio.PrecioBase;
-import com.skillswap.domain.precio.PrecioConPromocion;
-import com.skillswap.domain.precio.Promocion;
 
 import org.junit.jupiter.api.Test;
 

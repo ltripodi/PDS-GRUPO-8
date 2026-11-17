@@ -1,7 +1,4 @@
-package com.skillswap.application;
-
-import com.skillswap.application.compartido.ConflictoConcurrenciaException;
-import com.skillswap.application.compartido.ErrorAplicacion;
+package com.skillswap.application.compartido;
 
 import com.skillswap.application.compartido.ErrorAplicacion.Tipo;
 import org.junit.jupiter.api.Test;

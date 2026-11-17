@@ -1,4 +1,4 @@
-package com.skillswap.infrastructure.integrantedos;
+package com.skillswap.infrastructure.persistence;
 
 import com.skillswap.application.busqueda.BusquedaService;
 import com.skillswap.application.busqueda.CategoriaDTO;
@@ -22,10 +22,6 @@ import com.skillswap.domain.publicacion.Modalidad;
 import com.skillswap.domain.publicacion.Organizacion;
 import com.skillswap.domain.publicacion.Publicacion;
 import com.skillswap.domain.publicacion.TipoPublicacion;
-import com.skillswap.infrastructure.persistence.JpaPerfilRepository;
-import com.skillswap.infrastructure.persistence.JpaPublicacionRepository;
-import com.skillswap.infrastructure.persistence.JpaSolicitudRepository;
-import com.skillswap.infrastructure.persistence.JPAUtil;
 import com.skillswap.presentation.controller.BusquedaController;
 
 import jakarta.persistence.EntityManager;

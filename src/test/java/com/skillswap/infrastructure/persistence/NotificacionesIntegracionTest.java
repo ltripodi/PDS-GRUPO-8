@@ -1,4 +1,4 @@
-package com.skillswap.infrastructure.integrantedos;
+package com.skillswap.infrastructure.persistence;
 
 import com.skillswap.application.compartido.ErrorAplicacion;
 import com.skillswap.application.compartido.Pagina;
@@ -28,13 +28,6 @@ import com.skillswap.infrastructure.notificacion.EmailAdapter;
 import com.skillswap.infrastructure.notificacion.PushExternoMock;
 import com.skillswap.infrastructure.notificacion.PushAdapter;
 import com.skillswap.infrastructure.evento.PublicadorEventosEnMemoria;
-import com.skillswap.infrastructure.persistence.JpaContratacionRepository;
-import com.skillswap.infrastructure.persistence.JpaNotificacionRepository;
-import com.skillswap.infrastructure.persistence.JpaOrganizacionRepository;
-import com.skillswap.infrastructure.persistence.JpaPerfilRepository;
-import com.skillswap.infrastructure.persistence.JpaPublicacionRepository;
-import com.skillswap.infrastructure.persistence.JpaUnidadTransaccional;
-import com.skillswap.infrastructure.persistence.JPAUtil;
 import com.skillswap.presentation.controller.NotificacionController;
 
 import jakarta.persistence.EntityManager;

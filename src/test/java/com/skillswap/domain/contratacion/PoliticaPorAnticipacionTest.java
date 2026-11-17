@@ -1,8 +1,6 @@
-package com.skillswap.domain;
+package com.skillswap.domain.contratacion;
 
 import com.skillswap.domain.compartido.SkillCoins;
-import com.skillswap.domain.contratacion.PoliticaPorAnticipacion;
-import com.skillswap.domain.contratacion.PoliticaSinReintegro;
 
 import org.junit.jupiter.api.Test;
 

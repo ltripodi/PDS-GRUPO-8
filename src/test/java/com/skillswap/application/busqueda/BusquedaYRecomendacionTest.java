@@ -1,9 +1,5 @@
-package com.skillswap.application.integrantedos;
+package com.skillswap.application.busqueda;
 
-import com.skillswap.application.busqueda.BusquedaService;
-import com.skillswap.application.busqueda.CategoriaDTO;
-import com.skillswap.application.busqueda.FiltrosBusqueda;
-import com.skillswap.application.busqueda.RecomendacionService;
 import com.skillswap.application.compartido.ErrorAplicacion;
 import com.skillswap.application.compartido.Pagina;
 import com.skillswap.application.contratacion.SolicitudRepository;

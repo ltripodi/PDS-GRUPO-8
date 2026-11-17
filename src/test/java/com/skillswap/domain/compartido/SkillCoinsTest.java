@@ -1,6 +1,4 @@
-package com.skillswap.domain;
-
-import com.skillswap.domain.compartido.SkillCoins;
+package com.skillswap.domain.compartido;
 
 import org.junit.jupiter.api.Test;
 
