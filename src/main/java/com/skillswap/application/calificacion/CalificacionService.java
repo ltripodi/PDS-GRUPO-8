@@ -3,9 +3,11 @@ package com.skillswap.application.calificacion;
 import com.skillswap.application.compartido.UnidadTransaccional;
 import com.skillswap.application.contratacion.ContratacionRepository;
 import com.skillswap.application.perfil.PerfilRepository;
+import com.skillswap.application.publicacion.OrganizacionRepository;
 import com.skillswap.domain.calificacion.Calificacion;
 import com.skillswap.domain.contratacion.Contratacion;
 import com.skillswap.domain.perfil.Perfil;
+import com.skillswap.domain.publicacion.Organizacion;
 
 import java.util.UUID;
 
@@ -14,58 +16,64 @@ public class CalificacionService {
     private final CalificacionRepository calificaciones;
     private final ContratacionRepository contrataciones;
     private final PerfilRepository perfiles;
+    private final OrganizacionRepository organizaciones;
     private final UnidadTransaccional transacciones;
 
     public CalificacionService(CalificacionRepository calificaciones, ContratacionRepository contrataciones,
-                               PerfilRepository perfiles, UnidadTransaccional transacciones) {
+                               PerfilRepository perfiles, OrganizacionRepository organizaciones,
+                               UnidadTransaccional transacciones) {
         this.calificaciones = calificaciones;
         this.contrataciones = contrataciones;
         this.perfiles = perfiles;
+        this.organizaciones = organizaciones;
         this.transacciones = transacciones;
     }
 
     public void calificar(String userId, UUID contratacionId, String calificadoId, int puntaje) {
         transacciones.ejecutar(() -> {
-            Perfil calificador = obtenerPerfil(userId);
-            Perfil calificado = obtenerPerfil(calificadoId);
             Contratacion contratacion = contrataciones.buscarPorId(contratacionId)
                     .orElseThrow(() -> new IllegalArgumentException("No existe la contratacion indicada"));
+            Participante calificador = resolverParticipante(userId, contratacion);
+            Participante calificado = resolverParticipante(calificadoId, contratacion);
 
-            validarCalificacion(contratacion, calificador, calificado, userId, contratacionId);
+            contratacion.validarCalificacion(calificador.id(), calificado.id());
+            if (calificaciones.existe(contratacionId, userId)) {
+                throw new IllegalStateException("El participante ya califico esta contratacion");
+            }
             Calificacion calificacion = new Calificacion(contratacionId, userId, calificadoId, puntaje);
             calificaciones.guardar(calificacion);
-            calificado.recalcularReputacion(calificaciones.listarVerificadas(calificadoId));
-            perfiles.guardar(calificado);
+            calificado.perfilOpcional().ifPresent(perfil -> {
+                perfil.recalcularReputacion(calificaciones.listarVerificadas(calificadoId));
+                perfiles.guardar(perfil);
+            });
         });
     }
 
-    private void validarCalificacion(Contratacion contratacion, Perfil calificador, Perfil calificado,
-                                     String calificadorId, UUID contratacionId) {
-        if (!"COMPLETADA".equals(contratacion.getEstado())) {
-            throw new IllegalStateException("Solo una contratacion completada puede calificarse");
-        }
-        if (calificador.getId().equals(calificado.getId())) {
-            throw new IllegalArgumentException("Una persona no puede calificarse a si misma");
-        }
-        boolean actorEsCliente = contratacion.getClienteId().equals(calificador.getId());
-        boolean actorEsProveedor = contratacion.getProveedorId().equals(calificador.getId());
-        if (!actorEsCliente && !actorEsProveedor) {
-            throw new SecurityException("Solo los participantes pueden calificar la contratacion");
-        }
-        UUID destinatarioEsperado = actorEsCliente ? contratacion.getProveedorId() : contratacion.getClienteId();
-        if (!destinatarioEsperado.equals(calificado.getId())) {
-            throw new IllegalArgumentException("La calificacion debe dirigirse a la otra parte de la contratacion");
-        }
-        if (calificaciones.existe(contratacionId, calificadorId)) {
-            throw new IllegalStateException("El participante ya califico esta contratacion");
-        }
-    }
-
-    private Perfil obtenerPerfil(String userId) {
+    /* Una organizacion participa mediante su representante; la reputacion sigue siendo propia del Perfil. */
+    private Participante resolverParticipante(String userId, Contratacion contratacion) {
         if (userId == null || userId.isBlank()) {
             throw new IllegalArgumentException("El userId es obligatorio");
         }
-        return perfiles.buscarPorUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe el perfil indicado"));
+
+        Perfil perfil = perfiles.buscarPorUserId(userId).orElse(null);
+        if (perfil != null && contratacion.esParticipante(perfil.getId())) {
+            return new Participante(perfil.getId(), perfil);
+        }
+
+        Organizacion organizacion = organizaciones.buscarPorUserIdAutorizado(userId).orElse(null);
+        if (organizacion != null && contratacion.esParticipante(organizacion.getId())) {
+            return new Participante(organizacion.getId(), null);
+        }
+
+        if (perfil == null && organizacion == null) {
+            throw new IllegalArgumentException("No existe el participante indicado");
+        }
+        throw new SecurityException("Solo los participantes pueden calificar la contratacion");
+    }
+
+    private record Participante(UUID id, Perfil perfil) {
+        java.util.Optional<Perfil> perfilOpcional() {
+            return java.util.Optional.ofNullable(perfil);
+        }
     }
 }
