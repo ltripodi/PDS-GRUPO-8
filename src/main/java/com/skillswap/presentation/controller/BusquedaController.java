@@ -15,9 +15,6 @@ import java.util.List;
  */
 public class BusquedaController extends ControllerBase {
 
-    private static final int PRIMERA_PAGINA = 0;
-    private static final int TAMANIO_POR_DEFECTO = 20;
-
     private final BusquedaService busquedaService;
 
     public BusquedaController(BusquedaService busquedaService) {

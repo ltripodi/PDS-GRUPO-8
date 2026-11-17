@@ -156,7 +156,7 @@ public final class ConsolaSkillSwap {
     }
 
     private void mostrarPublicacionesPropias() {
-        List<PublicacionDTO> propias = app.publicaciones().listarPropias(usuario);
+        List<PublicacionDTO> propias = app.publicaciones().listarPropias(usuario).getElementos();
         mostrarPublicaciones(propias);
         propias.forEach(p -> System.out.println("     " + p.getTitulo() + " -> " + p.getEstado()));
     }
@@ -194,7 +194,7 @@ public final class ConsolaSkillSwap {
     // ---------- contrataciones ----------
 
     private List<ContratacionDTO> listarContrataciones() {
-        List<ContratacionDTO> propias = app.contrataciones().listarContrataciones(usuario);
+        List<ContratacionDTO> propias = app.contrataciones().listarContrataciones(usuario).getElementos();
         if (propias.isEmpty()) {
             System.out.println("  (no tiene contrataciones)");
         }
@@ -233,7 +233,7 @@ public final class ConsolaSkillSwap {
     }
 
     private void mostrarHistorial(UUID contratacionId) {
-        for (RegistroHistorialDTO r : app.contrataciones().consultarHistorial(usuario, contratacionId)) {
+        for (RegistroHistorialDTO r : app.contrataciones().consultarHistorial(usuario, contratacionId).getElementos()) {
             System.out.printf("  %s  %s -> %s  por %s  (%s)%n", r.getFecha(), r.getOrigen(), r.getDestino(),
                     r.getActor(), r.getMotivo());
         }
@@ -255,7 +255,7 @@ public final class ConsolaSkillSwap {
 
     private void mostrarBilletera() {
         System.out.println("  Saldo: " + app.billetera().consultarSaldo(usuario) + " SkillCoins");
-        for (MovimientoDTO m : app.billetera().listarMovimientos(usuario)) {
+        for (MovimientoDTO m : app.billetera().listarMovimientos(usuario).getElementos()) {
             System.out.printf("  %s  %-22s %6d%n", FORMATO.format(m.getFecha()), m.getTipo(), m.getMonto());
         }
     }

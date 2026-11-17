@@ -6,7 +6,6 @@ import com.skillswap.domain.compartido.SkillCoins;
 import com.skillswap.domain.pagos.Billetera;
 import com.skillswap.domain.pagos.Movimiento;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class WalletService {
@@ -23,11 +22,6 @@ public class WalletService {
         validarUserId(userId);
         Billetera billetera = billeteras.buscarPorTitular(userId);
         return billetera == null ? 0 : billetera.consultarSaldo().getValor();
-    }
-
-    public List<Movimiento> listarMovimientos(String userId) {
-        validarUserId(userId);
-        return billeteras.listarMovimientos(userId);
     }
 
     public int acreditarDemo(String userId, int importe) {
@@ -50,15 +44,15 @@ public class WalletService {
         return resultado.get();
     }
 
-    public Pagina<Movimiento> listarMovimientosPaginado(String userId, int pagina, int tamanio) {
+    public Pagina<Movimiento> listarMovimientosPaginado(
+            String userId, int pagina, int tamanio) {
+
         validarUserId(userId);
-        if (pagina < 0 || tamanio <= 0) {
-            throw new IllegalArgumentException("La página debe ser >= 0 y el tamaño > 0");
-        }
-        List<Movimiento> todos = listarMovimientos(userId);
-        int desde = Math.min(pagina * tamanio, todos.size());
-        int hasta = Math.min(desde + tamanio, todos.size());
-        return new Pagina<>(todos.subList(desde, hasta), pagina, tamanio, todos.size());
+        Pagina.validarPedido(pagina, tamanio);
+
+        return billeteras.listarMovimientosPaginado(
+                userId, pagina, tamanio
+        );
     }
 
     private void validarUserId(String userId) {

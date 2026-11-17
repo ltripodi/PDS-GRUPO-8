@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 /*
  * Casos de uso de 4.4 y 4.5. Sin reglas de negocio (estan en el dominio):
@@ -217,41 +216,28 @@ public class ContratacionService {
     }
 
     /* Tabla 4.5: consultar historial (unica accion en RECHAZADA/CANCELADA). Solo para participantes. */
-    public List<RegistroHistorialDTO> consultarHistorial(String userId, UUID contratacionId) {
-        AtomicReference<List<RegistroHistorialDTO>> resultado = new AtomicReference<>();
+    /*
+     * El historial se carga entero con la contratacion (element-collection), asi que se pagina en memoria.
+     * Igual conviene: se recorta antes de convertir, y solo se busca el nombre de los actores de la pagina.
+     * Llega en orden cronologico: orm.xml lo carga con ORDER BY fecha.
+     */
+    public Pagina<RegistroHistorialDTO> consultarHistorial(String userId, UUID contratacionId, int pagina,
+                                                           int tamanio) {
+        Pagina.validarPedido(pagina, tamanio);
+        AtomicReference<Pagina<RegistroHistorialDTO>> resultado = new AtomicReference<>();
 
         transacciones.ejecutar(() -> {
             Contratacion contratacion = obtenerContratacion(contratacionId);
             resolverActor(userId, contratacion);
-            resultado.set(contratacion.getHistorial().stream()
-                    .map(registro -> new RegistroHistorialDTO(
-                            LocalDateTime.ofInstant(registro.getFecha(), ZoneId.systemDefault()),
-                            nombreDeActor(registro.getActorId()),
-                            registro.getOrigen(),
-                            registro.getDestino(),
-                            registro.getMotivo()))
-                    .collect(Collectors.toList()));
-        });
-
-        return resultado.get();
-    }
-
-    /*
-     * Dentro de la transaccion para poder navegar relaciones LAZY al armar el DTO.
-     * El usuario puede ser un perfil o el representante de una organizacion (sin perfil): en ese caso
-     * ve las contrataciones de los desafios de la organizacion, donde es el proveedor.
-     */
-    public List<ContratacionDTO> listar(String userId) {
-        AtomicReference<List<ContratacionDTO>> resultado = new AtomicReference<>();
-
-        transacciones.ejecutar(() -> {
-            UUID perfilId = perfiles.buscarPorUserId(validarUserId(userId)).map(Perfil::getId).orElse(null);
-            if (perfilId == null && organizaciones.buscarPorUserIdAutorizado(userId).isEmpty()) {
-                throw new IllegalArgumentException("No existe el perfil indicado");
-            }
-            resultado.set(contrataciones.listarPorParticipante(userId).stream()
-                    .map(contratacion -> aDTO(contratacion, perfilId))
-                    .collect(Collectors.toList()));
+            resultado.set(Pagina.de(contratacion.getHistorial(), pagina, tamanio)
+                    .convertir(registros -> registros.stream()
+                            .map(registro -> new RegistroHistorialDTO(
+                                    LocalDateTime.ofInstant(registro.getFecha(), ZoneId.systemDefault()),
+                                    nombreDeActor(registro.getActorId()),
+                                    registro.getOrigen(),
+                                    registro.getDestino(),
+                                    registro.getMotivo()))
+                            .toList()));
         });
 
         return resultado.get();
@@ -264,17 +250,44 @@ public class ContratacionService {
         return userId;
     }
 
-    /* Consigna 4.3: listados paginados. */
-    public Pagina<ContratacionDTO> listarPaginado(String userId, int pagina, int tamanio) {
-        if (pagina < 0 || tamanio <= 0) {
-            throw new IllegalArgumentException("La pagina debe ser >= 0 y el tamanio > 0");
-        }
-        List<ContratacionDTO> todas = listar(userId);
+    /*
+     * Dentro de la transaccion para poder navegar relaciones LAZY al armar el DTO.
+     * El usuario puede ser un perfil o el representante de una organizacion (sin perfil): en ese caso
+     * ve las contrataciones de los desafios de la organizacion, donde es el proveedor.
+     * Consigna 4.3: el repositorio trae solo la pagina pedida y solo esos elementos se convierten a DTO.
+     */
+    public Pagina<ContratacionDTO> listarPaginado(
+            String userId, int pagina, int tamanio) {
 
-        int desde = Math.min(pagina * tamanio, todas.size());
-        int hasta = Math.min(desde + tamanio, todas.size());
+        validarUserId(userId);
+        Pagina.validarPedido(pagina, tamanio);
 
-        return new Pagina<>(todas.subList(desde, hasta), pagina, tamanio, todas.size());
+        AtomicReference<Pagina<ContratacionDTO>> resultado =
+                new AtomicReference<>();
+
+        transacciones.ejecutar(() -> {
+            UUID perfilId = perfiles.buscarPorUserId(userId)
+                    .map(Perfil::getId)
+                    .orElse(null);
+
+            if (perfilId == null &&
+                    organizaciones.buscarPorUserIdAutorizado(userId)
+                            .isEmpty()) {
+                throw new IllegalArgumentException(
+                        "No existe el perfil indicado"
+                );
+            }
+
+            resultado.set(
+                    contrataciones.listarPorParticipantePaginado(
+                            userId, pagina, tamanio
+                    ).convertir(items -> items.stream()
+                            .map(c -> aDTO(c, perfilId))
+                            .toList())
+            );
+        });
+
+        return resultado.get();
     }
 
     private Perfil obtenerPerfil(String userId) {

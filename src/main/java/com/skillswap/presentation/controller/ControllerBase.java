@@ -10,6 +10,10 @@ import java.util.function.Supplier;
  */
 abstract class ControllerBase {
 
+    /* Pagina que devuelven los listados cuando quien llama no pide una. */
+    protected static final int PRIMERA_PAGINA = 0;
+    protected static final int TAMANIO_POR_DEFECTO = 20;
+
     protected <T> T ejecutar(Supplier<T> casoDeUso) {
         try {
             return casoDeUso.get();

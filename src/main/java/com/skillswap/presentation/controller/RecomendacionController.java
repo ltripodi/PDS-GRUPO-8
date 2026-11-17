@@ -11,8 +11,6 @@ import com.skillswap.domain.busqueda.TipoRecomendacion;
  */
 public class RecomendacionController extends ControllerBase {
 
-    private static final int PRIMERA_PAGINA = 0;
-    private static final int TAMANIO_POR_DEFECTO = 20;
     private static final TipoRecomendacion RECOMENDACION_POR_DEFECTO = TipoRecomendacion.HABILIDADES;
 
     private final RecomendacionService recomendacionService;

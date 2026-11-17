@@ -74,21 +74,21 @@ class DesafioIntegracionTest {
                 desafio.getFranjas().get(0).getId(), "Ganar el desafio");
 
         // El representante (sin perfil) ve la solicitud, con el profesional como contraparte
-        List<ContratacionDTO> delRepresentante = controller.listarContrataciones(representante);
+        List<ContratacionDTO> delRepresentante = controller.listarContrataciones(representante).getElementos();
         assertEquals(1, delRepresentante.size());
         assertEquals(id, delRepresentante.get(0).getId());
         assertEquals("Pro", delRepresentante.get(0).getContraparte());
         assertEquals(profesional.getUserId(), delRepresentante.get(0).getContraparteUserId());
 
         // El profesional ve a la organizacion como contraparte
-        ContratacionDTO delProfesional = controller.listarContrataciones(profesional.getUserId()).get(0);
+        ContratacionDTO delProfesional = controller.listarContrataciones(profesional.getUserId()).getElementos().get(0);
         assertEquals(organizacion.getNombre(), delProfesional.getContraparte());
         assertEquals(representante, delProfesional.getContraparteUserId());
 
         controller.aceptar(representante, id);
         controller.pagar(profesional.getUserId(), id);
 
-        assertEquals(EstadoContratacionDTO.CONFIRMADA, controller.listarContrataciones(representante).get(0).getEstado());
+        assertEquals(EstadoContratacionDTO.CONFIRMADA, controller.listarContrataciones(representante).getElementos().get(0).getEstado());
         assertEquals(200, billeteras.buscarPorTitular(profesional.getUserId()).getSaldo().getValor());
         assertEquals(300, billeteras.buscarPorTitular(representante).getSaldo().getValor(),
                 "el pago del desafio lo cobra la organizacion, en la billetera de su representante");
@@ -116,7 +116,7 @@ class DesafioIntegracionTest {
         controller.solicitar(profesional.getUserId(), desafioAjeno.getId(), "", desafioAjeno.getFranjas().get(0).getId(),
                 "Participar");
 
-        List<ContratacionDTO> lista = controller.listarContrataciones(representante);
+        List<ContratacionDTO> lista = controller.listarContrataciones(representante).getElementos();
         assertEquals(1, lista.size());
         assertTrue(lista.get(0).getTitulo().equals(desafioPropio.getTitulo()));
     }

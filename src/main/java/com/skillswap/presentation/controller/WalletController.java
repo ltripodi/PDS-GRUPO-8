@@ -20,8 +20,13 @@ public class WalletController extends ControllerBase {
         return ejecutar(() -> walletService.consultarSaldo(userId));
     }
 
-    public List<MovimientoDTO> listarMovimientos(String userId) {
-        return ejecutar(() -> aDTOs(walletService.listarMovimientos(userId)));
+    public Pagina<MovimientoDTO> listarMovimientos(String userId) {
+        return listarMovimientos(userId, PRIMERA_PAGINA, TAMANIO_POR_DEFECTO);
+    }
+
+    public Pagina<MovimientoDTO> listarMovimientos(String userId, int pagina, int tamanio) {
+        return ejecutar(() -> walletService.listarMovimientosPaginado(userId, pagina, tamanio)
+                .convertir(WalletController::aDTOs));
     }
 
     /*
@@ -30,11 +35,6 @@ public class WalletController extends ControllerBase {
      */
     public int acreditarDemo(String userId, int importe) {
         return ejecutar(() -> walletService.acreditarDemo(userId, importe));
-    }
-
-    public Pagina<MovimientoDTO> listarMovimientosPaginado(String userId, int pagina, int tamanio) {
-        return ejecutar(() -> walletService.listarMovimientosPaginado(userId, pagina, tamanio)
-                .convertir(WalletController::aDTOs));
     }
 
     private static List<MovimientoDTO> aDTOs(List<Movimiento> movimientos) {

@@ -280,7 +280,7 @@ class IntegranteTresTest {
         controller.rechazar("proveedor", id);
 
         assertThrows(ErrorAplicacion.class, () -> controller.aceptar("proveedor", id));
-        List<RegistroHistorialDTO> historial = controller.consultarHistorial("cliente", id);
+        List<RegistroHistorialDTO> historial = controller.consultarHistorial("cliente", id).getElementos();
 
         assertEquals(1, historial.size());
         assertEquals("PENDIENTE", historial.get(0).getOrigen());
@@ -334,7 +334,7 @@ class IntegranteTresTest {
         assertThrows(ErrorAplicacion.class, () -> controller.cancelar("cliente", UUID.randomUUID(), ""));
 
         UUID id = controller.solicitar("cliente", publicacion.getId(), "Hola", franja.getId(), "Aprender");
-        Pagina<ContratacionDTO> pagina = controller.listarContratacionesPaginado("cliente", 0, 10);
+        Pagina<ContratacionDTO> pagina = controller.listarContrataciones("cliente", 0, 10);
 
         assertEquals(1, pagina.getTotalElementos());
         assertEquals(id, pagina.getElementos().get(0).getId());

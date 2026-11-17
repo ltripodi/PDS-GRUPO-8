@@ -85,6 +85,7 @@ public class JpaPublicacionRepository extends SimpleJpaRepository<Publicacion, U
      */
     @Override
     public Pagina<Publicacion> buscar(FiltrosBusqueda filtros, int pagina, int tamanio) {
+        Pagina.validarPedido(pagina, tamanio); // antes de consultar: el tope tiene que cortar antes de la base
         Map<String, Object> parametros = new HashMap<>();
         String where = condicionesDeBusqueda(filtros, parametros);
         String orderBy = ordenDeBusqueda(filtros);
@@ -187,6 +188,7 @@ public class JpaPublicacionRepository extends SimpleJpaRepository<Publicacion, U
 
     @Override
     public Pagina<Publicacion> listarPropiasPaginado(String userId, int pagina, int tamanio) {
+        Pagina.validarPedido(pagina, tamanio); // antes de consultar: el tope tiene que cortar antes de la base
         return JPAUtil.consultar(em -> {
             Long total = em
                     .createQuery("SELECT COUNT(p) FROM Publicacion p "
@@ -201,7 +203,7 @@ public class JpaPublicacionRepository extends SimpleJpaRepository<Publicacion, U
                             + "WHERE perfil.userId = :userId OR organizacion.userIdAutorizado = :userId "
                             + "ORDER BY p.fechaCreacion DESC, p.id", Publicacion.class)
                     .setParameter("userId", userId)
-                    .setFirstResult(pagina * tamanio)
+                    .setFirstResult(Pagina.desplazamiento(pagina, tamanio))
                     .setMaxResults(tamanio)
                     .getResultList();
 
