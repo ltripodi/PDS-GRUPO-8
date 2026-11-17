@@ -57,8 +57,9 @@
 - [ ] Faltan tests de doble pago y doble calificación concurrentes.
 - [ ] Paginación en memoria en `ContratacionService.listar` y en `WalletService`.
 - [ ] Casi todo el mapeo es `EAGER`, y `buscarCandidatas` trae todas las publicaciones.
-- [ ] Un desafío no se puede calificar: la organización no tiene `Perfil` ni reputación.
-- [ ] Menores: `SkillCoins` sin `equals`/`hashCode`; `Movimiento.tipo` es `String`; algunos getters devuelven las listas internas; `PagoService` recibe un `CalculadorPrecio` que no usa.
+- [x] Un desafío se puede calificar por ambas partes: la organización participa mediante su representante; sólo los perfiles recalculan reputación.
+- [x] Los getters de colecciones de dominio devuelven copias inmutables; ya no se pueden modificar agregados desde afuera de sus operaciones.
+- [ ] Menores: `SkillCoins` sin `equals`/`hashCode`; `Movimiento.tipo` es `String`; `PagoService` recibe un `CalculadorPrecio` que no usa.
 
 ### Decisiones para el grupo
 

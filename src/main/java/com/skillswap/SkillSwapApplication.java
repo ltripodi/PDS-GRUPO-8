@@ -172,7 +172,7 @@ public final class SkillSwapApplication implements AutoCloseable {
                 new RecomendacionController(recomendacionService),
                 new ContratacionController(contratacionService, pagoService),
                 new CalificacionController(
-                        new CalificacionService(calificacionRepo, contratacionRepo, perfilRepo, unidad)),
+                        new CalificacionService(calificacionRepo, contratacionRepo, perfilRepo, organizacionRepo, unidad)),
                 new PerfilController(new PerfilService(perfilRepo, new JpaHabilidadRepository(),
                         calificacionRepo, publicacionRepo, contratacionRepo, unidad)),
                 new PublicacionController(new PublicacionService(publicacionRepo, perfilRepo, organizacionRepo)),

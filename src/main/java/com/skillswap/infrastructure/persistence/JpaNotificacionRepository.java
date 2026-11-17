@@ -27,6 +27,7 @@ public class JpaNotificacionRepository extends SimpleJpaRepository<Notificacion,
     /* Pagina en la base: un COUNT y un SELECT con LIMIT/OFFSET, sin traer toda la bandeja. Usa el indice (destinatario, fecha). */
     @Override
     public Pagina<Notificacion> listar(String destinatarioId, int pagina, int tamanio) {
+        Pagina.validarPedido(pagina, tamanio); // antes de consultar: el tope tiene que cortar antes de la base
         return JPAUtil.consultar(em -> {
             long total = em.createQuery(
                             "SELECT COUNT(n) FROM Notificacion n WHERE n.destinatarioId = :destinatario", Long.class)

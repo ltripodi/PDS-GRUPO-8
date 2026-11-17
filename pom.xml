@@ -63,6 +63,15 @@
 
     <build>
         <plugins>
+            <!-- Fijado: maven.compiler.release requiere un compiler plugin que soporte la opcion release. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                </configuration>
+            </plugin>
             <!-- mvn compile exec:java -> arranca SkillSwapApplication (composition root) y abre la consola -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

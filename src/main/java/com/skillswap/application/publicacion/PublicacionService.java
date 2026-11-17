@@ -29,11 +29,6 @@ public class PublicacionService {
         this.organizacionRepository = organizacionRepository;
     }
 
-    public List<Publicacion> listarPropias(String userId) {
-        validarUserId(userId);
-        return publicacionRepository.listarPropias(userId);
-    }
-
     /* Para los controllers: la interfaz recibe PublicacionDTO, nunca la entidad. */
     public PublicacionDTO aDTO(Publicacion publicacion) {
         Perfil autor = publicacion.getOrganizacion() != null ? null
@@ -131,7 +126,7 @@ public class PublicacionService {
 
     public Pagina<Publicacion> listarPropiasPaginado(String userId, int pagina, int tamanio) {
         validarUserId(userId);
-        validarPaginacion(pagina, tamanio);
+        Pagina.validarPedido(pagina, tamanio);
         return publicacionRepository.listarPropiasPaginado(userId, pagina, tamanio);
     }
 
@@ -198,12 +193,6 @@ public class PublicacionService {
     private static void validarUserId(String userId) {
         if (userId == null || userId.isBlank()) {
             throw new IllegalArgumentException("El userId es obligatorio");
-        }
-    }
-
-    private static void validarPaginacion(int pagina, int tamanio) {
-        if (pagina < 0 || tamanio <= 0) {
-            throw new IllegalArgumentException("La paginacion es invalida");
         }
     }
 }

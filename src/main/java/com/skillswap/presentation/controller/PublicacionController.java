@@ -8,7 +8,6 @@ import com.skillswap.domain.publicacion.EstadoPublicacion;
 import com.skillswap.domain.publicacion.Modalidad;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 /* Devuelve siempre PublicacionDTO: la interfaz nunca conoce la entidad Publicacion. */
@@ -19,8 +18,13 @@ public class PublicacionController extends ControllerBase {
         this.publicacionService = publicacionService;
     }
 
-    public List<PublicacionDTO> listarPropias(String userId) {
-        return ejecutar(() -> publicacionService.aDTOs(publicacionService.listarPropias(userId)));
+    public Pagina<PublicacionDTO> listarPropias(String userId) {
+        return listarPropias(userId, PRIMERA_PAGINA, TAMANIO_POR_DEFECTO);
+    }
+
+    public Pagina<PublicacionDTO> listarPropias(String userId, int pagina, int tamanio) {
+        return ejecutar(() -> publicacionService.listarPropiasPaginado(userId, pagina, tamanio)
+                .convertir(publicacionService::aDTOs));
     }
 
     /** Compatibilidad con el mock inicial: crea una mentoria individual con cupo uno. */
@@ -53,10 +57,5 @@ public class PublicacionController extends ControllerBase {
 
     public void cancelar(String userId, UUID id, String motivo) {
         ejecutarAccion(() -> publicacionService.cancelar(userId, id, motivo));
-    }
-
-    public Pagina<PublicacionDTO> listarPropiasPaginado(String userId, int pagina, int tamanio) {
-        return ejecutar(() -> publicacionService.listarPropiasPaginado(userId, pagina, tamanio)
-                .convertir(publicacionService::aDTOs));
     }
 }

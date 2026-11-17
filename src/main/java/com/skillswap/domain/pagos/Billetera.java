@@ -36,7 +36,7 @@ public class Billetera {
     }
 
     public List<Movimiento> getMovimientos() {
-        return movimientos;
+        return movimientos == null ? List.of() : List.copyOf(movimientos);
     }
 
     public void debitar(SkillCoins monto) {

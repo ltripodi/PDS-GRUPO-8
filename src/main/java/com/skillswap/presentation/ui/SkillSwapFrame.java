@@ -483,7 +483,7 @@ public final class SkillSwapFrame extends JFrame {
 
     private void historial(ContratacionDTO c) {
         String u = usuario;
-        trabajo("Consultando el historial", () -> app.contrataciones().consultarHistorial(u, c.getId()), registros -> {
+        trabajo("Consultando el historial", () -> app.contrataciones().consultarHistorial(u, c.getId()).getElementos(), registros -> {
             DefaultTableModel modelo = modelo("Fecha", "De", "A", "Actor", "Motivo");
             for (RegistroHistorialDTO r : registros) {
                 modelo.addRow(new Object[]{r.getFecha() == null ? "" : FECHA_LOCAL.format(r.getFecha()),
@@ -671,12 +671,12 @@ public final class SkillSwapFrame extends JFrame {
     private DatosUsuario cargar(String u) {
         List<String> avisos = new ArrayList<>();
         return new DatosUsuario(
-                intentar(() -> app.contrataciones().listarContrataciones(u), List.of(), avisos),
+                intentar(() -> app.contrataciones().listarContrataciones(u).getElementos(), List.of(), avisos),
                 intentar(() -> app.billetera().consultarSaldo(u), 0, avisos),
-                intentar(() -> app.billetera().listarMovimientos(u), List.of(), avisos),
+                intentar(() -> app.billetera().listarMovimientos(u).getElementos(), List.of(), avisos),
                 intentar(() -> app.notificaciones().listar(u, 0, 50).getElementos(), List.of(), avisos),
                 intentar(() -> app.perfiles().verPerfil(u), null, avisos),
-                intentar(() -> app.publicaciones().listarPropias(u), List.of(), avisos),
+                intentar(() -> app.publicaciones().listarPropias(u).getElementos(), List.of(), avisos),
                 avisos);
     }
 

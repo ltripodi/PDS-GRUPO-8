@@ -95,7 +95,7 @@ public final class DemoGuiada {
 
         titulo("Historial de transiciones de la contratacion de bruno");
         intentar(() -> {
-            for (RegistroHistorialDTO r : app.contrataciones().consultarHistorial("bruno", deBruno)) {
+            for (RegistroHistorialDTO r : app.contrataciones().consultarHistorial("bruno", deBruno).getElementos()) {
                 out.println("     " + r.getOrigen() + " -> " + r.getDestino() + " por " + r.getActor()
                         + " (" + r.getMotivo() + ")");
             }
@@ -114,7 +114,7 @@ public final class DemoGuiada {
     }
 
     private void estado(String userId, UUID contratacionId) {
-        intentar(() -> app.contrataciones().listarContrataciones(userId).stream()
+        intentar(() -> app.contrataciones().listarContrataciones(userId).getElementos().stream()
                 .filter(c -> c.getId().equals(contratacionId))
                 .findFirst()
                 .ifPresent(c -> out.println("     estado: " + c.getEstado() + " (" + c.getPrecio() + " SkillCoins)")));

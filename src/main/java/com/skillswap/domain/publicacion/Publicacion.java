@@ -7,6 +7,7 @@ import com.skillswap.domain.perfil.Perfil;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -178,7 +179,7 @@ public class Publicacion {
     }
 
     public Set<String> getEtiquetas() {
-        return etiquetas;
+        return etiquetas == null ? Set.of() : Set.copyOf(etiquetas);
     }
 
     public LocalDateTime getFechaCreacion() {
@@ -186,11 +187,11 @@ public class Publicacion {
     }
 
     public List<FranjaHoraria> getFranjas() {
-        return franjas;
+        return franjas == null ? List.of() : List.copyOf(franjas);
     }
 
     public Set<Habilidad> getHabilidades() {
-        return habilidades;
+        return habilidades == null ? Set.of() : Set.copyOf(habilidades);
     }
 
     /* Solo para ofertas de un perfil. En un desafio es null: usar getOrganizacion(). */
@@ -293,6 +294,15 @@ public class Publicacion {
         }
         this.etiquetas.clear();
         this.etiquetas.addAll(normalizadas);
+    }
+
+    public void reemplazarHabilidades(Collection<Habilidad> nuevasHabilidades) {
+        asegurarBorrador();
+        if (nuevasHabilidades == null || nuevasHabilidades.stream().anyMatch(habilidad -> habilidad == null)) {
+            throw new IllegalArgumentException("Las habilidades no pueden contener valores nulos");
+        }
+        habilidades.clear();
+        habilidades.addAll(nuevasHabilidades);
     }
 
     private void asegurarBorrador() {

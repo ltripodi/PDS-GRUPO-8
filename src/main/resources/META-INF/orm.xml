@@ -176,6 +176,8 @@
                 </collection-table>
             </element-collection>
             <element-collection name="historial" fetch="EAGER">
+                <!-- La tabla no guarda posicion: sin ORDER BY la base no garantiza el orden cronologico. -->
+                <order-by>fecha ASC</order-by>
                 <collection-table name="publicacion_historial">
                     <join-column name="publicacion_id"/>
                 </collection-table>
@@ -293,6 +295,8 @@
                 </cascade>
             </one-to-one>
             <element-collection name="historial" fetch="EAGER">
+                <!-- La tabla no guarda posicion: sin ORDER BY la base no garantiza el orden cronologico. -->
+                <order-by>fecha ASC</order-by>
                 <collection-table name="contratacion_historial">
                     <join-column name="contratacion_id"/>
                 </collection-table>

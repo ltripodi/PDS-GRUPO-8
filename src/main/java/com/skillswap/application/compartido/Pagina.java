@@ -7,6 +7,9 @@ import java.util.function.Function;
 /* Una pagina de resultados. "numero" es base 0. */
 public class Pagina<T> {
 
+    /* Tope de elementos por pagina: sin el, pedir un tamanio enorme traeria toda la tabla y anularia el paginado. */
+    public static final int TAMANIO_MAXIMO = 100;
+
     private final List<T> elementos;
     private final int numero;
     private final int tamanio;
@@ -41,6 +44,9 @@ public class Pagina<T> {
         }
         if (tamanio <= 0) {
             throw new IllegalArgumentException("El tamaño de página debe ser mayor a cero");
+        }
+        if (tamanio > TAMANIO_MAXIMO) {
+            throw new IllegalArgumentException("El tamaño de página no puede superar " + TAMANIO_MAXIMO);
         }
     }
 

@@ -13,7 +13,10 @@ import com.skillswap.application.publicacion.PublicacionService;
 import com.skillswap.domain.calificacion.Calificacion;
 import com.skillswap.domain.compartido.SkillCoins;
 import com.skillswap.domain.contratacion.Contratacion;
+import com.skillswap.domain.contratacion.PropuestaReprogramacion;
 import com.skillswap.domain.contratacion.Solicitud;
+import com.skillswap.domain.pagos.Billetera;
+import com.skillswap.domain.pagos.Movimiento;
 import com.skillswap.domain.perfil.DisponibilidadPerfil;
 import com.skillswap.domain.perfil.Habilidad;
 import com.skillswap.domain.perfil.Perfil;
@@ -148,7 +151,7 @@ class IntegranteUnoTest {
         InMemoryContratacionRepository contrataciones = new InMemoryContratacionRepository(contratacion);
         InMemoryCalificacionRepository calificaciones = new InMemoryCalificacionRepository();
         CalificacionService servicio = new CalificacionService(calificaciones, contrataciones, perfiles,
-                Runnable::run);
+                new InMemoryOrganizacionRepository(new Organizacion("Otra", "otro")), Runnable::run);
 
         servicio.calificar("cliente", contratacion.getId(), "proveedor", 5);
 
@@ -162,10 +165,61 @@ class IntegranteUnoTest {
                 () -> new Calificacion(contratacion.getId(), "cliente", "proveedor", 6));
     }
 
+    @Test
+    void lasDosPartesDeUnDesafioPuedenCalificarseYSoloElPerfilRecalculaReputacion() {
+        InMemoryPerfilRepository perfiles = new InMemoryPerfilRepository();
+        Perfil cliente = new Perfil("cliente", "Cliente", "", ZoneId.of("UTC"));
+        perfiles.guardar(cliente);
+        Organizacion organizacion = new Organizacion("UADE", "uade-admin");
+        Contratacion contratacion = new ContratacionCompletada(cliente, organizacion.getId());
+        InMemoryCalificacionRepository calificaciones = new InMemoryCalificacionRepository();
+        CalificacionService servicio = new CalificacionService(calificaciones,
+                new InMemoryContratacionRepository(contratacion), perfiles,
+                new InMemoryOrganizacionRepository(organizacion), Runnable::run);
+
+        servicio.calificar("uade-admin", contratacion.getId(), "cliente", 4);
+        servicio.calificar("cliente", contratacion.getId(), "uade-admin", 5);
+
+        assertEquals(2, calificaciones.calificaciones.size());
+        assertEquals(4.0, cliente.obtenerReputacion(),
+                "la reputacion se deriva solo de calificaciones dirigidas al perfil");
+        assertThrows(IllegalStateException.class,
+                () -> servicio.calificar("uade-admin", contratacion.getId(), "cliente", 3));
+    }
+
+    @Test
+    void losGettersDeColeccionesDelDominioNoPermitenModificarElEstadoInterno() {
+        Perfil perfil = new Perfil("ana", "Ana", "", ZoneId.of("UTC"));
+        Publicacion publicacion = Publicacion.crearOferta(perfil, TipoPublicacion.MENTORIA, "Clase", "",
+                new Categoria("Tecnologia"), Modalidad.REMOTA, new SkillCoins(10), 60, 1);
+        Billetera billetera = new Billetera("ana");
+        Contratacion contratacion = new Contratacion(perfil.getId(), UUID.randomUUID(), new SkillCoins(10),
+                new Solicitud(perfil.getId(), publicacion, UUID.randomUUID(), "", ""));
+
+        assertThrows(UnsupportedOperationException.class,
+                () -> perfil.getHabilidades().add(new Habilidad("Java")));
+        assertThrows(UnsupportedOperationException.class, () -> perfil.getIntereses().add("backend"));
+        assertThrows(UnsupportedOperationException.class,
+                () -> perfil.getDisponibilidad().add(new DisponibilidadPerfil(Instant.now(), Instant.now().plusSeconds(60))));
+        assertThrows(UnsupportedOperationException.class, () -> publicacion.getEtiquetas().add("java"));
+        assertThrows(UnsupportedOperationException.class,
+                () -> publicacion.getFranjas().add(new FranjaHoraria(Instant.now(), Instant.now().plusSeconds(60), 1)));
+        assertThrows(UnsupportedOperationException.class,
+                () -> publicacion.getHabilidades().add(new Habilidad("Java")));
+        assertThrows(UnsupportedOperationException.class,
+                () -> billetera.getMovimientos().add(new Movimiento("ana", new SkillCoins(1), "CREDITO")));
+        assertThrows(UnsupportedOperationException.class,
+                () -> contratacion.getPropuestas().add(new PropuestaReprogramacion(contratacion.getId(), UUID.randomUUID())));
+    }
+
     private static final class ContratacionCompletada extends Contratacion {
         private ContratacionCompletada(Perfil cliente, Perfil proveedor) {
-            super(cliente.getId(), proveedor.getId(), new SkillCoins(10), new Solicitud(cliente.getId(),
-                    new Publicacion(proveedor.getId(), TipoPublicacion.MENTORIA, "Clase", "", new Categoria("Test"),
+            this(cliente, proveedor.getId());
+        }
+
+        private ContratacionCompletada(Perfil cliente, UUID proveedorId) {
+            super(cliente.getId(), proveedorId, new SkillCoins(10), new Solicitud(cliente.getId(),
+                    new Publicacion(proveedorId, TipoPublicacion.MENTORIA, "Clase", "", new Categoria("Test"),
                             Modalidad.REMOTA, new SkillCoins(10), 60, 1), UUID.randomUUID(), "", ""));
         }
 

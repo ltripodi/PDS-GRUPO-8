@@ -8,7 +8,6 @@ import com.skillswap.application.contratacion.RegistroHistorialDTO;
 import com.skillswap.application.pagos.ComprobantePagoDTO;
 import com.skillswap.application.pagos.PagoService;
 
-import java.util.List;
 import java.util.UUID;
 
 /*
@@ -103,24 +102,32 @@ public class ContratacionController extends ControllerBase {
         });
     }
 
-    public List<RegistroHistorialDTO> consultarHistorial(String userId, UUID contratacionId) {
+    public Pagina<RegistroHistorialDTO> consultarHistorial(String userId, UUID contratacionId) {
+        return consultarHistorial(userId, contratacionId, PRIMERA_PAGINA, TAMANIO_POR_DEFECTO);
+    }
+
+    public Pagina<RegistroHistorialDTO> consultarHistorial(String userId, UUID contratacionId, int pagina,
+                                                           int tamanio) {
         return ejecutar(() -> {
             validar(userId, contratacionId);
-            return contratacionService.consultarHistorial(userId, contratacionId);
+            return contratacionService.consultarHistorial(userId, contratacionId, pagina, tamanio);
         });
     }
 
-    public List<ContratacionDTO> listarContrataciones(String userId) {
-        return ejecutar(() -> {
-            validarUserId(userId);
-            return contratacionService.listar(userId);
-        });
+    public Pagina<ContratacionDTO> listarContrataciones(
+            String userId) {
+
+        return listarContrataciones(userId, PRIMERA_PAGINA, TAMANIO_POR_DEFECTO);
     }
 
-    public Pagina<ContratacionDTO> listarContratacionesPaginado(String userId, int pagina, int tamanio) {
+    public Pagina<ContratacionDTO> listarContrataciones(
+            String userId, int pagina, int tamanio) {
+
         return ejecutar(() -> {
             validarUserId(userId);
-            return contratacionService.listarPaginado(userId, pagina, tamanio);
+            return contratacionService.listarPaginado(
+                    userId, pagina, tamanio
+            );
         });
     }
 
