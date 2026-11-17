@@ -1,5 +1,6 @@
 package com.skillswap.infrastructure.persistence;
 
+import com.skillswap.domain.evento.TipoEvento;
 import com.skillswap.domain.notificacion.CanalNotificacion;
 import com.skillswap.domain.perfil.Perfil;
 import com.skillswap.domain.publicacion.EstadoPublicacion;
@@ -12,8 +13,10 @@ import jakarta.persistence.Persistence;
 import org.flywaydb.core.api.output.MigrateResult;
 import org.junit.jupiter.api.Test;
 
+import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -47,8 +50,9 @@ class MigracionesTest {
         String url = baseNueva();
 
         MigrateResult resultado = MigracionesBaseDeDatos.migrar(url, "sa", "");
-        assertEquals(7, resultado.migrationsExecuted, "V1 esquema, V2 datos demo, V3 limpieza, "
-                + "V4 version de billeteras, V5 integridad y concurrencia, V6 usuario y V7 nombre de la organizacion");
+        assertEquals(8, resultado.migrationsExecuted, "V1 esquema, V2 datos demo, V3 limpieza, "
+                + "V4 version de billeteras, V5 integridad y concurrencia, V6 usuario, V7 nombre de la organizacion "
+                + "y V8 tipos de notificacion");
         assertFalse(existeTabla(url, "registro_estado_publicacion"), "V3 la elimina");
 
         EntityManagerFactory emf = validarMapeoContra(url);
@@ -79,6 +83,27 @@ class MigracionesTest {
         } finally {
             em.close();
             emf.close();
+        }
+    }
+
+    /* La columna tipo es un enum de la base: si le falta un valor de TipoEvento, ese aviso no se podria guardar. */
+    @Test
+    void laBandejaAceptaTodosLosTiposDeEvento() throws SQLException {
+        String url = baseNueva();
+        MigracionesBaseDeDatos.migrar(url, "sa", "");
+
+        try (Connection c = DriverManager.getConnection(url, "sa", "");
+             PreparedStatement insert = c.prepareStatement("insert into notificaciones "
+                     + "(id, destinatario_id, detalle, fecha, leida, tipo, titulo) "
+                     + "values (?, 'ana', '', '2027-01-01 10:00:00', false, ?, 'Aviso')")) {
+            for (TipoEvento tipo : TipoEvento.values()) {
+                ByteBuffer id = ByteBuffer.allocate(16);
+                UUID uuid = UUID.randomUUID();
+                id.putLong(uuid.getMostSignificantBits()).putLong(uuid.getLeastSignificantBits());
+                insert.setBytes(1, id.array());
+                insert.setString(2, tipo.name());
+                assertEquals(1, insert.executeUpdate(), "la base no acepta " + tipo);
+            }
         }
     }
 

@@ -140,6 +140,7 @@ public class ContratacionService {
             Contratacion contratacion = obtenerContratacion(id);
             contratacion.rechazar(resolverActor(userId, contratacion));
             contrataciones.guardar(contratacion);
+            publicar(TipoEvento.RECHAZO, contratacion, userId);
         });
     }
 
@@ -194,6 +195,8 @@ public class ContratacionService {
 
             contratacion.proponerReprogramacion(resolverActor(userId, contratacion), nuevaFranja);
             contrataciones.guardar(contratacion);
+            // La otra parte tiene que aceptarla: sin este aviso no se enteraria de que hay algo pendiente.
+            publicar(TipoEvento.REPROGRAMACION_PROPUESTA, contratacion, userId);
         });
     }
 
@@ -212,6 +215,7 @@ public class ContratacionService {
             Contratacion contratacion = obtenerContratacion(contratacionId);
             contratacion.rechazarReprogramacion(resolverActor(userId, contratacion));
             contrataciones.guardar(contratacion);
+            publicar(TipoEvento.REPROGRAMACION_RECHAZADA, contratacion, userId);
         });
     }
 

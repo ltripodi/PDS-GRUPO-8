@@ -52,7 +52,7 @@ com.skillswap
 │   └── publicacion    PublicacionService, PublicacionRepository, OrganizacionRepository, PublicacionMapper,
 │                      PublicacionDTO, FranjaDTO, DatosPublicacionDTO
 ├── infrastructure
-│   ├── adapters.notificacion   CanalInterno, EmailMockAdapter, PushMockAdapter,
+│   ├── notificacion            CanalInterno, EmailAdapter, PushAdapter,
 │   │                           EmailExternoMock, PushExternoMock                             [Adapter]
 │   ├── evento                  PublicadorEventosEnMemoria
 │   └── persistence             JPAUtil, SimpleJpaRepository, Jpa*Repository (11), JpaUnidadTransaccional,

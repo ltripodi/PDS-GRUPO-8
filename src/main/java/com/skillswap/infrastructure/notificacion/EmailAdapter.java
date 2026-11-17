@@ -1,4 +1,4 @@
-package com.skillswap.infrastructure.adapters.notificacion;
+package com.skillswap.infrastructure.notificacion;
 
 import com.skillswap.application.notificacion.CanalEnvio;
 import com.skillswap.domain.notificacion.CanalNotificacion;
@@ -9,11 +9,11 @@ import com.skillswap.domain.notificacion.Notificacion;
  * Traduce CanalEnvio.enviar(Notificacion), que es lo que espera la aplicacion,
  * a EmailExternoMock.enviarCorreo(userId, contenido), que es la firma del proveedor.
  */
-public class EmailMockAdapter implements CanalEnvio {
+public class EmailAdapter implements CanalEnvio {
 
     private final EmailExternoMock cliente;
 
-    public EmailMockAdapter(EmailExternoMock cliente) {
+    public EmailAdapter(EmailExternoMock cliente) {
         if (cliente == null) {
             throw new IllegalArgumentException("El proveedor de email es obligatorio");
         }

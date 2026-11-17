@@ -22,11 +22,11 @@ import com.skillswap.application.publicacion.PublicacionService;
 import com.skillswap.domain.busqueda.RecomendacionPorHabilidades;
 import com.skillswap.domain.busqueda.RecomendacionPorPopularidad;
 import com.skillswap.domain.contratacion.PoliticaPorAnticipacion;
-import com.skillswap.infrastructure.adapters.notificacion.CanalInterno;
-import com.skillswap.infrastructure.adapters.notificacion.EmailExternoMock;
-import com.skillswap.infrastructure.adapters.notificacion.EmailMockAdapter;
-import com.skillswap.infrastructure.adapters.notificacion.PushExternoMock;
-import com.skillswap.infrastructure.adapters.notificacion.PushMockAdapter;
+import com.skillswap.infrastructure.notificacion.CanalInterno;
+import com.skillswap.infrastructure.notificacion.EmailExternoMock;
+import com.skillswap.infrastructure.notificacion.EmailAdapter;
+import com.skillswap.infrastructure.notificacion.PushExternoMock;
+import com.skillswap.infrastructure.notificacion.PushAdapter;
 import com.skillswap.infrastructure.evento.PublicadorEventosEnMemoria;
 import com.skillswap.infrastructure.persistence.JpaBilleteraRepository;
 import com.skillswap.infrastructure.persistence.JpaCalificacionRepository;
@@ -150,7 +150,7 @@ public final class SkillSwapApplication implements AutoCloseable {
         PushExternoMock push = new PushExternoMock();
         PublicadorEventosEnMemoria publicador = new PublicadorEventosEnMemoria();
         NotificacionService notificacionService = new NotificacionService(notificacionRepo, perfilRepo,
-                List.of(new CanalInterno(notificacionRepo), new EmailMockAdapter(email), new PushMockAdapter(push)));
+                List.of(new CanalInterno(notificacionRepo), new EmailAdapter(email), new PushAdapter(push)));
         publicador.suscribir(new NotificacionesObserver(notificacionService));
 
         // Servicios (casos de uso)

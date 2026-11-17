@@ -9,6 +9,8 @@ import com.skillswap.domain.notificacion.Notificacion;
 import com.skillswap.domain.notificacion.PreferenciaNotificacion;
 import com.skillswap.domain.perfil.Perfil;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -185,11 +187,23 @@ public class NotificacionService {
             case SESION_COMPLETADA -> new Mensaje(
                     esActor ? "Marcaste la sesion como completada" : "La sesion fue completada",
                     "Ya podes calificar la sesion.");
+            case RECHAZO -> esActor
+                    ? new Mensaje("Rechazaste la solicitud", "La solicitud quedo rechazada.")
+                    : new Mensaje("Tu solicitud fue rechazada", "Podes buscar otra publicacion.");
+            case REPROGRAMACION_PROPUESTA -> esActor
+                    ? new Mensaje("Propusiste una reprogramacion", "La otra parte tiene que aceptarla o rechazarla.")
+                    : new Mensaje("Te propusieron reprogramar la sesion", "Acepta o rechaza la nueva fecha.");
+            // La descarta la otra parte o la retira quien la propuso: por eso un texto neutro.
+            case REPROGRAMACION_RECHAZADA -> new Mensaje(
+                    esActor ? "Descartaste la propuesta de reprogramacion" : "La propuesta de reprogramacion fue descartada",
+                    "La sesion sigue en la fecha original.");
         };
     }
 
+    /* La fecha se pasa a la zona del sistema, igual que en el historial de la contratacion. */
     private static NotificacionDTO aDTO(Notificacion notificacion) {
         return new NotificacionDTO(notificacion.getId(), notificacion.getTitulo(), notificacion.getDetalle(),
-                notificacion.getFecha(), notificacion.isLeida(), notificacion.getTipo().name());
+                LocalDateTime.ofInstant(notificacion.getFecha(), ZoneId.systemDefault()), notificacion.isLeida(),
+                notificacion.getTipo().name());
     }
 }

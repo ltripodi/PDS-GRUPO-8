@@ -1,4 +1,4 @@
-package com.skillswap.infrastructure.adapters.notificacion;
+package com.skillswap.infrastructure.notificacion;
 
 import com.skillswap.application.notificacion.CanalEnvio;
 import com.skillswap.application.notificacion.NotificacionRepository;

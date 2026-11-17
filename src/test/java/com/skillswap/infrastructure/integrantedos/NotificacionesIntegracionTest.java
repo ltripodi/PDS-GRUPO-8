@@ -16,18 +16,17 @@ import com.skillswap.domain.contratacion.PoliticaSinReintegro;
 import com.skillswap.domain.evento.EventoDominio;
 import com.skillswap.domain.evento.TipoEvento;
 import com.skillswap.domain.notificacion.CanalNotificacion;
-import com.skillswap.domain.notificacion.Notificacion;
 import com.skillswap.domain.perfil.Perfil;
 import com.skillswap.domain.publicacion.Categoria;
 import com.skillswap.domain.publicacion.FranjaHoraria;
 import com.skillswap.domain.publicacion.Modalidad;
 import com.skillswap.domain.publicacion.Publicacion;
 import com.skillswap.domain.publicacion.TipoPublicacion;
-import com.skillswap.infrastructure.adapters.notificacion.CanalInterno;
-import com.skillswap.infrastructure.adapters.notificacion.EmailExternoMock;
-import com.skillswap.infrastructure.adapters.notificacion.EmailMockAdapter;
-import com.skillswap.infrastructure.adapters.notificacion.PushExternoMock;
-import com.skillswap.infrastructure.adapters.notificacion.PushMockAdapter;
+import com.skillswap.infrastructure.notificacion.CanalInterno;
+import com.skillswap.infrastructure.notificacion.EmailExternoMock;
+import com.skillswap.infrastructure.notificacion.EmailAdapter;
+import com.skillswap.infrastructure.notificacion.PushExternoMock;
+import com.skillswap.infrastructure.notificacion.PushAdapter;
 import com.skillswap.infrastructure.evento.PublicadorEventosEnMemoria;
 import com.skillswap.infrastructure.persistence.JpaContratacionRepository;
 import com.skillswap.infrastructure.persistence.JpaNotificacionRepository;
@@ -74,7 +73,7 @@ class NotificacionesIntegracionTest {
     private final PushExternoMock push = new PushExternoMock();
     private final PublicadorEventosEnMemoria publicador = new PublicadorEventosEnMemoria();
     private final NotificacionService notificacionService = new NotificacionService(notificaciones, perfiles,
-            List.of(new CanalInterno(notificaciones), new EmailMockAdapter(email), new PushMockAdapter(push)));
+            List.of(new CanalInterno(notificaciones), new EmailAdapter(email), new PushAdapter(push)));
     private final NotificacionController controller = new NotificacionController(notificacionService);
 
     /* El caso de uso de 4.4 sin modificar: solo se le inyecta el publicador real. Pagos no interviene. */

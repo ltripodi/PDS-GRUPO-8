@@ -37,7 +37,7 @@ import com.skillswap.domain.publicacion.Modalidad;
 import com.skillswap.domain.publicacion.Organizacion;
 import com.skillswap.domain.publicacion.Publicacion;
 import com.skillswap.domain.publicacion.TipoPublicacion;
-import com.skillswap.infrastructure.adapters.notificacion.CanalInterno;
+import com.skillswap.infrastructure.notificacion.CanalInterno;
 import com.skillswap.infrastructure.evento.PublicadorEventosEnMemoria;
 import com.skillswap.infrastructure.persistence.JpaBilleteraRepository;
 import com.skillswap.infrastructure.persistence.JpaCalificacionRepository;
@@ -51,7 +51,6 @@ import com.skillswap.infrastructure.persistence.JpaSolicitudRepository;
 import com.skillswap.infrastructure.persistence.JpaUnidadTransaccional;
 import com.skillswap.infrastructure.persistence.JPAUtil;
 
-import jakarta.persistence.PersistenceException;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
