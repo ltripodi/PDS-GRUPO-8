@@ -13,11 +13,11 @@ import com.skillswap.domain.notificacion.CanalNotificacion;
 import com.skillswap.domain.notificacion.Notificacion;
 import com.skillswap.domain.notificacion.PreferenciaNotificacion;
 import com.skillswap.domain.perfil.Perfil;
-import com.skillswap.infrastructure.adapters.notificacion.CanalInterno;
-import com.skillswap.infrastructure.adapters.notificacion.EmailExternoMock;
-import com.skillswap.infrastructure.adapters.notificacion.EmailMockAdapter;
-import com.skillswap.infrastructure.adapters.notificacion.PushExternoMock;
-import com.skillswap.infrastructure.adapters.notificacion.PushMockAdapter;
+import com.skillswap.infrastructure.notificacion.CanalInterno;
+import com.skillswap.infrastructure.notificacion.EmailExternoMock;
+import com.skillswap.infrastructure.notificacion.EmailAdapter;
+import com.skillswap.infrastructure.notificacion.PushExternoMock;
+import com.skillswap.infrastructure.notificacion.PushAdapter;
 import com.skillswap.infrastructure.evento.PublicadorEventosEnMemoria;
 import com.skillswap.presentation.controller.NotificacionController;
 
@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -60,7 +61,7 @@ class NotificacionesTest {
     private final EmailExternoMock email = new EmailExternoMock();
     private final PushExternoMock push = new PushExternoMock();
     private final NotificacionService servicio = new NotificacionService(bandeja, perfiles,
-            List.of(new CanalInterno(bandeja), new EmailMockAdapter(email), new PushMockAdapter(push)));
+            List.of(new CanalInterno(bandeja), new EmailAdapter(email), new PushAdapter(push)));
 
     @Nested
     @DisplayName("Dominio: notificacion y preferencias")
@@ -152,7 +153,10 @@ class NotificacionesTest {
                 "PAGO_CONFIRMADO,    cliente,   Tu pago fue confirmado,             El cliente pago la sesion",
                 "REPROGRAMACION,     cliente,   Confirmaste la reprogramacion,      La sesion fue reprogramada",
                 "CANCELACION,        proveedor, Cancelaste la contratacion,         La contratacion fue cancelada",
-                "SESION_COMPLETADA,  proveedor, Marcaste la sesion como completada, La sesion fue completada"
+                "SESION_COMPLETADA,  proveedor, Marcaste la sesion como completada, La sesion fue completada",
+                "RECHAZO,            proveedor, Rechazaste la solicitud,            Tu solicitud fue rechazada",
+                "REPROGRAMACION_PROPUESTA, cliente, Propusiste una reprogramacion,  Te propusieron reprogramar la sesion",
+                "REPROGRAMACION_RECHAZADA, proveedor, Descartaste la propuesta de reprogramacion, La propuesta de reprogramacion fue descartada"
         })
         void notificaAlActorYALaOtraParteConTextosDistintos(TipoEvento tipo, String actor,
                                                             String tituloParaElActor, String tituloParaLaOtraParte) {
@@ -263,7 +267,7 @@ class NotificacionesTest {
             nuevoPerfil(CLIENTE, CanalNotificacion.EMAIL);
             nuevoPerfil(PROVEEDOR, CanalNotificacion.EMAIL);
             NotificacionService conBandejaCaida = new NotificacionService(bandeja, perfiles,
-                    List.of(new CanalQueFalla(CanalNotificacion.INTERNA), new EmailMockAdapter(email)));
+                    List.of(new CanalQueFalla(CanalNotificacion.INTERNA), new EmailAdapter(email)));
 
             conBandejaCaida.notificar(eventoEntreLasPartes(TipoEvento.CANCELACION, CLIENTE));
 
@@ -304,7 +308,7 @@ class NotificacionesTest {
             NotificacionDTO dto = recibidas.get(0);
             assertEquals(propia.getId(), dto.getId());
             assertEquals("Propia", dto.getTitulo());
-            assertEquals(propia.getFecha(), dto.getFecha());
+            assertEquals(LocalDateTime.ofInstant(propia.getFecha(), ZoneId.systemDefault()), dto.getFecha());
             assertEquals("ACEPTACION", dto.getTipo());
             assertFalse(dto.isLeida());
         }
@@ -360,7 +364,7 @@ class NotificacionesTest {
             assertThrows(IllegalArgumentException.class,
                     () -> servicio.configurarCanales("", Set.of(CanalNotificacion.EMAIL)));
             assertThrows(IllegalArgumentException.class, () -> new NotificacionService(bandeja, perfiles,
-                    List.of(new EmailMockAdapter(email), new EmailMockAdapter(new EmailExternoMock()))));
+                    List.of(new EmailAdapter(email), new EmailAdapter(new EmailExternoMock()))));
             assertThrows(IllegalArgumentException.class,
                     () -> new NotificacionService(bandeja, perfiles, List.of()));
         }
@@ -381,7 +385,7 @@ class NotificacionesTest {
         @Test
         void elServicioExigeElCanalInterno() {
             assertThrows(IllegalArgumentException.class, () -> new NotificacionService(bandeja, perfiles,
-                    List.of(new EmailMockAdapter(email), new PushMockAdapter(push))));
+                    List.of(new EmailAdapter(email), new PushAdapter(push))));
         }
     }
 
@@ -473,8 +477,8 @@ class NotificacionesTest {
         void cadaAdapterLeEntregaAlProveedorExternoLoQueEsteEspera() {
             EmailExternoMock proveedorDeEmail = new EmailExternoMock();
             PushExternoMock proveedorDePush = new PushExternoMock();
-            EmailMockAdapter adapterDeEmail = new EmailMockAdapter(proveedorDeEmail);
-            PushMockAdapter adapterDePush = new PushMockAdapter(proveedorDePush);
+            EmailAdapter adapterDeEmail = new EmailAdapter(proveedorDeEmail);
+            PushAdapter adapterDePush = new PushAdapter(proveedorDePush);
 
             adapterDeEmail.enviar(notificacion);
             adapterDePush.enviar(notificacion);
@@ -509,13 +513,13 @@ class NotificacionesTest {
 
         @Test
         void losCanalesRechazanDatosFaltantes() {
-            assertThrows(IllegalArgumentException.class, () -> new EmailMockAdapter(null));
-            assertThrows(IllegalArgumentException.class, () -> new PushMockAdapter(null));
+            assertThrows(IllegalArgumentException.class, () -> new EmailAdapter(null));
+            assertThrows(IllegalArgumentException.class, () -> new PushAdapter(null));
             assertThrows(IllegalArgumentException.class, () -> new CanalInterno(null));
             assertThrows(IllegalArgumentException.class,
-                    () -> new EmailMockAdapter(new EmailExternoMock()).enviar(null));
+                    () -> new EmailAdapter(new EmailExternoMock()).enviar(null));
             assertThrows(IllegalArgumentException.class,
-                    () -> new PushMockAdapter(new PushExternoMock()).enviar(null));
+                    () -> new PushAdapter(new PushExternoMock()).enviar(null));
             assertThrows(IllegalArgumentException.class, () -> new CanalInterno(bandeja).enviar(null));
             assertThrows(IllegalArgumentException.class, () -> new EmailExternoMock().enviarCorreo(" ", "x"));
             assertTrue(new PushExternoMock().getEmitidos().isEmpty());

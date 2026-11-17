@@ -7,6 +7,9 @@ import java.util.function.Function;
 /* Una pagina de resultados. "numero" es base 0. */
 public class Pagina<T> {
 
+    /* Pagina que se devuelve cuando quien llama no pide una. */
+    public static final int PRIMERA_PAGINA = 0;
+    public static final int TAMANIO_POR_DEFECTO = 20;
     /* Tope de elementos por pagina: sin el, pedir un tamanio enorme traeria toda la tabla y anularia el paginado. */
     public static final int TAMANIO_MAXIMO = 100;
 

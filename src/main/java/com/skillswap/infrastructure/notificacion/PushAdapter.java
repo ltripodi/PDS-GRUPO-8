@@ -1,4 +1,4 @@
-package com.skillswap.infrastructure.adapters.notificacion;
+package com.skillswap.infrastructure.notificacion;
 
 import com.skillswap.application.notificacion.CanalEnvio;
 import com.skillswap.domain.notificacion.CanalNotificacion;
@@ -8,11 +8,11 @@ import com.skillswap.domain.notificacion.Notificacion;
  * Adapter Pattern - Adapter
  * Traduce CanalEnvio.enviar(Notificacion) a PushExternoMock.emitirPush(userId, contenido).
  */
-public class PushMockAdapter implements CanalEnvio {
+public class PushAdapter implements CanalEnvio {
 
     private final PushExternoMock cliente;
 
-    public PushMockAdapter(PushExternoMock cliente) {
+    public PushAdapter(PushExternoMock cliente) {
         if (cliente == null) {
             throw new IllegalArgumentException("El proveedor de push es obligatorio");
         }

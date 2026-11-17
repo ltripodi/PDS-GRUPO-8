@@ -1,23 +1,23 @@
 package com.skillswap.application.notificacion;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /*
  * Notificacion como la ve la interfaz: solo datos, nunca la entidad.
- * Tiene los mismos campos que Models.Notificacion del kit. La fecha queda como Instant:
- * pasarla a LocalDateTime (lo que usa el kit) requiere elegir una zona y se hace al integrar la UI.
+ * Tiene los mismos campos que Models.Notificacion del kit, incluida la fecha como LocalDateTime
+ * (el servicio la pasa a la zona del sistema).
  */
 public class NotificacionDTO {
 
     private final UUID id;
     private final String titulo;
     private final String detalle;
-    private final Instant fecha;
+    private final LocalDateTime fecha;
     private final boolean leida;
     private final String tipo;
 
-    public NotificacionDTO(UUID id, String titulo, String detalle, Instant fecha, boolean leida, String tipo) {
+    public NotificacionDTO(UUID id, String titulo, String detalle, LocalDateTime fecha, boolean leida, String tipo) {
         this.id = id;
         this.titulo = titulo;
         this.detalle = detalle;
@@ -38,7 +38,7 @@ public class NotificacionDTO {
         return detalle;
     }
 
-    public Instant getFecha() {
+    public LocalDateTime getFecha() {
         return fecha;
     }
 

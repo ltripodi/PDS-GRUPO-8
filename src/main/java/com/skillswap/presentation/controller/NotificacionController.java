@@ -21,7 +21,7 @@ public class NotificacionController extends ControllerBase {
     }
 
     public Pagina<NotificacionDTO> listar(String userId) {
-        return listar(userId, PRIMERA_PAGINA, TAMANIO_POR_DEFECTO);
+        return listar(userId, Pagina.PRIMERA_PAGINA, Pagina.TAMANIO_POR_DEFECTO);
     }
 
     public Pagina<NotificacionDTO> listar(String userId, int pagina, int tamanio) {

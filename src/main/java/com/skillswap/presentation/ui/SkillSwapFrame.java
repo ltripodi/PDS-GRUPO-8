@@ -718,7 +718,7 @@ public final class SkillSwapFrame extends JFrame {
         long sinLeer = 0;
         for (NotificacionDTO n : datos.notificaciones()) {
             sinLeer += n.isLeida() ? 0 : 1;
-            modeloNotificaciones.addRow(new Object[]{n.isLeida() ? "" : "●", FECHA.format(n.getFecha()),
+            modeloNotificaciones.addRow(new Object[]{n.isLeida() ? "" : "●", FECHA_LOCAL.format(n.getFecha()),
                     n.getTitulo(), n.getDetalle()});
         }
         pestanias.setTitleAt(3, sinLeer > 0 ? "Notificaciones (" + sinLeer + ")" : "Notificaciones");

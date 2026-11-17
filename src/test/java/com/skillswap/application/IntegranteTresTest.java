@@ -279,6 +279,8 @@ class IntegranteTresTest {
         UUID id = controller.solicitar("cliente", publicacion.getId(), "Hola", franja.getId(), "Aprender");
         controller.rechazar("proveedor", id);
 
+        assertEquals(List.of(TipoEvento.SOLICITUD_RECIBIDA, TipoEvento.RECHAZO), escenario.eventos.tipos(),
+                "el cliente se entera de que lo rechazaron");
         assertThrows(ErrorAplicacion.class, () -> controller.aceptar("proveedor", id));
         List<RegistroHistorialDTO> historial = controller.consultarHistorial("cliente", id).getElementos();
 
@@ -303,6 +305,9 @@ class IntegranteTresTest {
         Contratacion contratacion = escenario.contrataciones.buscarPorId(dto.getId()).orElseThrow();
         assertEquals(franja.getId(), contratacion.getReserva().getFranjaId());
         assertEquals("ACEPTADA", contratacion.getEstado());
+        assertEquals(List.of(TipoEvento.SOLICITUD_RECIBIDA, TipoEvento.ACEPTACION,
+                TipoEvento.REPROGRAMACION_PROPUESTA, TipoEvento.REPROGRAMACION_RECHAZADA), escenario.eventos.tipos(),
+                "la otra parte se entera de la propuesta, y quien propuso de que se descarto");
     }
 
     @Test

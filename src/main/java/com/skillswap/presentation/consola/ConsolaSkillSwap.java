@@ -30,6 +30,7 @@ public final class ConsolaSkillSwap {
     private static final List<String> USUARIOS_DEMO = List.of("ana", "bruno", "carla", "diego", "uade-admin");
     private static final DateTimeFormatter FORMATO = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
             .withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter FORMATO_LOCAL = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final Controladores app;
     private final Scanner entrada;
@@ -266,7 +267,7 @@ public final class ConsolaSkillSwap {
             System.out.println("  (sin notificaciones)");
         }
         for (NotificacionDTO n : bandeja) {
-            System.out.printf("  %s %s  %s: %s%n", n.isLeida() ? " " : "*", FORMATO.format(n.getFecha()),
+            System.out.printf("  %s %s  %s: %s%n", n.isLeida() ? " " : "*", FORMATO_LOCAL.format(n.getFecha()),
                     n.getTitulo(), n.getDetalle());
         }
         System.out.println("  Enviados por los mocks en esta ejecucion: " + app.emailsEnviados() + " emails, "
