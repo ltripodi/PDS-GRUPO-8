@@ -22,7 +22,7 @@ public class BusquedaController extends ControllerBase {
     }
 
     public Pagina<PublicacionDTO> buscar(FiltrosBusqueda filtros) {
-        return buscar(filtros, PRIMERA_PAGINA, TAMANIO_POR_DEFECTO);
+        return buscar(filtros, Pagina.PRIMERA_PAGINA, Pagina.TAMANIO_POR_DEFECTO);
     }
 
     public Pagina<PublicacionDTO> buscar(FiltrosBusqueda filtros, int pagina, int tamanio) {

@@ -19,7 +19,7 @@ public class PublicacionController extends ControllerBase {
     }
 
     public Pagina<PublicacionDTO> listarPropias(String userId) {
-        return listarPropias(userId, PRIMERA_PAGINA, TAMANIO_POR_DEFECTO);
+        return listarPropias(userId, Pagina.PRIMERA_PAGINA, Pagina.TAMANIO_POR_DEFECTO);
     }
 
     public Pagina<PublicacionDTO> listarPropias(String userId, int pagina, int tamanio) {

@@ -21,7 +21,7 @@ public class WalletController extends ControllerBase {
     }
 
     public Pagina<MovimientoDTO> listarMovimientos(String userId) {
-        return listarMovimientos(userId, PRIMERA_PAGINA, TAMANIO_POR_DEFECTO);
+        return listarMovimientos(userId, Pagina.PRIMERA_PAGINA, Pagina.TAMANIO_POR_DEFECTO);
     }
 
     public Pagina<MovimientoDTO> listarMovimientos(String userId, int pagina, int tamanio) {

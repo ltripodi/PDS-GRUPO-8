@@ -20,7 +20,7 @@ public class RecomendacionController extends ControllerBase {
     }
 
     public Pagina<PublicacionDTO> recomendar(String userId) {
-        return recomendar(userId, RECOMENDACION_POR_DEFECTO, PRIMERA_PAGINA, TAMANIO_POR_DEFECTO);
+        return recomendar(userId, RECOMENDACION_POR_DEFECTO, Pagina.PRIMERA_PAGINA, Pagina.TAMANIO_POR_DEFECTO);
     }
 
     public Pagina<PublicacionDTO> recomendar(String userId, TipoRecomendacion tipo, int pagina, int tamanio) {

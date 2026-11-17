@@ -103,7 +103,7 @@ public class ContratacionController extends ControllerBase {
     }
 
     public Pagina<RegistroHistorialDTO> consultarHistorial(String userId, UUID contratacionId) {
-        return consultarHistorial(userId, contratacionId, PRIMERA_PAGINA, TAMANIO_POR_DEFECTO);
+        return consultarHistorial(userId, contratacionId, Pagina.PRIMERA_PAGINA, Pagina.TAMANIO_POR_DEFECTO);
     }
 
     public Pagina<RegistroHistorialDTO> consultarHistorial(String userId, UUID contratacionId, int pagina,
@@ -117,7 +117,7 @@ public class ContratacionController extends ControllerBase {
     public Pagina<ContratacionDTO> listarContrataciones(
             String userId) {
 
-        return listarContrataciones(userId, PRIMERA_PAGINA, TAMANIO_POR_DEFECTO);
+        return listarContrataciones(userId, Pagina.PRIMERA_PAGINA, Pagina.TAMANIO_POR_DEFECTO);
     }
 
     public Pagina<ContratacionDTO> listarContrataciones(
