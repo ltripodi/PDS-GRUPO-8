@@ -31,6 +31,24 @@ class BilleteraTest {
     }
 
     @Test
+    void devolver_descuentaYRegistraTipoDevolucion() {
+        Billetera b = new Billetera("proveedor");
+        b.acreditar(new SkillCoins(50));
+        b.devolver(new SkillCoins(30));
+        assertEquals(20, b.consultarSaldo().getValor());
+        assertEquals("DEVOLUCION", b.getMovimientos().get(1).getTipo());
+    }
+
+    @Test
+    void devolver_sinSaldoNoModificaNada() {
+        Billetera b = new Billetera("proveedor");
+        b.acreditar(new SkillCoins(10));
+        assertThrows(IllegalStateException.class, () -> b.devolver(new SkillCoins(30)));
+        assertEquals(10, b.consultarSaldo().getValor());
+        assertEquals(1, b.getMovimientos().size());
+    }
+
+    @Test
     void reintegrar_registraTipoReintegro() {
         Billetera b = new Billetera("user1");
         b.reintegrar(new SkillCoins(30));

@@ -11,7 +11,7 @@ import java.util.UUID;
  * Strategy Pattern - Concrete Strategy
  * Puntaje: cantidad de solicitudes recientes de la publicacion.
  */
-public class RecomendacionPorPopularidad implements EstrategiaRecomendacion {
+public class RecomendacionPorPopularidad extends EstrategiaPorPuntaje {
 
     @Override
     public TipoRecomendacion tipo() {
@@ -24,12 +24,14 @@ public class RecomendacionPorPopularidad implements EstrategiaRecomendacion {
     }
 
     @Override
-    public List<Publicacion> recomendar(Perfil perfil, List<Publicacion> candidatas,
-                                        Map<UUID, Integer> solicitudesRecientes) {
+    protected void validar(Perfil perfil, List<Publicacion> candidatas, Map<UUID, Integer> solicitudesRecientes) {
         if (candidatas == null || solicitudesRecientes == null) {
             throw new IllegalArgumentException("Las candidatas y el conteo de solicitudes son obligatorios");
         }
-        return EstrategiaRecomendacion.ordenarPorPuntaje(candidatas,
-                publicacion -> solicitudesRecientes.getOrDefault(publicacion.getId(), 0));
+    }
+
+    @Override
+    protected int puntaje(Perfil perfil, Publicacion publicacion, Map<UUID, Integer> solicitudesRecientes) {
+        return solicitudesRecientes.getOrDefault(publicacion.getId(), 0);
     }
 }

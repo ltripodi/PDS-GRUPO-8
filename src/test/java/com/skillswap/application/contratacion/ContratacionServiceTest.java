@@ -1,5 +1,6 @@
 package com.skillswap.application.contratacion;
 
+import com.skillswap.application.DoblesEnMemoria;
 import com.skillswap.application.busqueda.FiltrosBusqueda;
 import com.skillswap.application.compartido.ErrorAplicacion;
 import com.skillswap.application.compartido.Pagina;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -128,11 +130,29 @@ class ContratacionServiceTest {
 
     @Test
     void cancelarUnaContratacionPagadaReintegraSegunLaPoliticaConfigurada() {
-        assertEquals(100, reintegroAlCancelarCon(politicaFija(100)));
-        assertEquals(0, reintegroAlCancelarCon(politicaFija(0)));
+        assertEquals(100, reintegroAlCancelarCon(politicaFija(100), "cliente"));
+        assertEquals(0, reintegroAlCancelarCon(politicaFija(0), "cliente"));
     }
 
-    private int reintegroAlCancelarCon(PoliticaCancelacion politica) {
+    /* La politica configurada es la del cliente: si cancela el proveedor, el cliente recupera todo. */
+    @Test
+    void siCancelaElProveedorElClienteRecuperaTodoAunqueLaPoliticaNoDevuelvaNada() {
+        assertEquals(100, reintegroAlCancelarCon(politicaFija(0), "proveedor"));
+    }
+
+    @Test
+    void cancelarSinHaberPagadoNoReintegraNada() {
+        prepararPublicacionPublicada();
+        Escenario escenario = new Escenario(politicaFija(100));
+        ContratacionDTO dto = escenario.servicio.solicitar("cliente",
+                new DatosSolicitudDTO(publicacion.getId(), franja.getId(), "", "Aprender"));
+        escenario.servicio.aceptar("proveedor", dto.getId());
+
+        assertEquals(0, escenario.servicio.cancelar("proveedor", dto.getId(), "No llego"));
+        assertEquals(0, escenario.pagos.reintegrado);
+    }
+
+    private int reintegroAlCancelarCon(PoliticaCancelacion politica, String quienCancela) {
         prepararPublicacionPublicada();
         Escenario escenario = new Escenario(politica);
         ContratacionDTO dto = escenario.servicio.solicitar("cliente",
@@ -141,8 +161,9 @@ class ContratacionServiceTest {
         // Simula el efecto de PagoService (integrante 4).
         escenario.contrataciones.buscarPorId(dto.getId()).orElseThrow().confirmarPago(cliente.getId());
 
-        escenario.servicio.cancelar("cliente", dto.getId(), "Imprevisto");
+        int informado = escenario.servicio.cancelar(quienCancela, dto.getId(), "Imprevisto");
 
+        assertEquals(escenario.pagos.reintegrado, informado, "cancelar informa lo que se reintegro");
         return escenario.pagos.reintegrado;
     }
 
@@ -172,13 +193,14 @@ class ContratacionServiceTest {
         final InMemoryContratacionRepository contrataciones = new InMemoryContratacionRepository(perfiles);
         final EventosEnMemoria eventos = new EventosEnMemoria();
         final PagoServiceFalso pagos = new PagoServiceFalso();
+        final DoblesEnMemoria.Promociones promociones = new DoblesEnMemoria.Promociones();
         final ContratacionService servicio;
 
         Escenario(PoliticaCancelacion politica) {
             perfiles.guardar(cliente);
             perfiles.guardar(proveedor);
             servicio = new ContratacionService(contrataciones, new UnaPublicacionRepository(publicacion), perfiles,
-                    new SinOrganizaciones(), Runnable::run, eventos, pagos, politica);
+                    new SinOrganizaciones(), Runnable::run, eventos, pagos, politica, promociones);
         }
     }
 
@@ -200,7 +222,7 @@ class ContratacionServiceTest {
 
         PagoServiceFalso() {
             // PagoService ahora recibe sus dependencias; este doble no usa ninguna.
-            super(null, null, null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null);
         }
 
         @Override
@@ -240,6 +262,15 @@ class ContratacionServiceTest {
         }
 
         @Override
+        public Map<UUID, Perfil> buscarPorIds(Set<UUID> ids) {
+            Map<UUID, Perfil> encontrados = new HashMap<>();
+            if (ids != null) {
+                ids.forEach(id -> buscarPorId(id).ifPresent(perfil -> encontrados.put(id, perfil)));
+            }
+            return encontrados;
+        }
+
+        @Override
         public void guardar(Perfil perfil) {
             perfiles.put(perfil.getUserId(), perfil);
         }
@@ -262,6 +293,11 @@ class ContratacionServiceTest {
         public List<Contratacion> listarPorParticipante(String userId) {
             UUID perfilId = perfiles.buscarPorUserId(userId).map(Perfil::getId).orElse(null);
             return contrataciones.values().stream().filter(c -> c.esParticipante(perfilId)).toList();
+        }
+
+        @Override
+        public Pagina<Contratacion> listarPorParticipantePaginado(String userId, int pagina, int tamanio) {
+            return Pagina.de(listarPorParticipante(userId), pagina, tamanio);
         }
 
         @Override

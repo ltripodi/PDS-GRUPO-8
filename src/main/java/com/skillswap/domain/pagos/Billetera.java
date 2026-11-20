@@ -63,6 +63,22 @@ public class Billetera {
         return this.saldo;
     }
 
+    /*
+     * El proveedor devuelve un pago que habia cobrado (cancelacion con reintegro): mismo efecto que debitar,
+     * con tipo propio para que en el historial no parezca un gasto. Si ya no tiene ese saldo, falla.
+     */
+    public void devolver(SkillCoins monto) {
+        if (monto == null) {
+            throw new IllegalArgumentException("El monto es obligatorio");
+        }
+        int nuevo = this.saldo.getValor() - monto.getValor();
+        if (nuevo < 0) {
+            throw new IllegalStateException("Saldo insuficiente para devolver el pago");
+        }
+        this.saldo = new SkillCoins(nuevo);
+        this.movimientos.add(new Movimiento(this.titularId, monto, "DEVOLUCION"));
+    }
+
     /** Reintegro: mismo efecto que acreditar, con tipo propio para auditoría. */
     public void reintegrar(SkillCoins monto) {
         if (monto == null) {

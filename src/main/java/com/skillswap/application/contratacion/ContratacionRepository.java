@@ -11,15 +11,8 @@ public interface ContratacionRepository {
     Optional<Contratacion> buscarPorId(UUID id);
 
     List<Contratacion> listarPorParticipante(String userId);
-    default Pagina<Contratacion> listarPorParticipantePaginado(
-            String userId, int pagina, int tamanio) {
 
-        return Pagina.de(
-                listarPorParticipante(userId),
-                pagina,
-                tamanio
-        );
-    }
+    Pagina<Contratacion> listarPorParticipantePaginado(String userId, int pagina, int tamanio);
 
     void guardar(Contratacion contratacion);
 }

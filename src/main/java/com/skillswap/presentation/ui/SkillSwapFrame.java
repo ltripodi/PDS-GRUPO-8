@@ -443,8 +443,19 @@ public final class SkillSwapFrame extends JFrame {
         if (motivo == null) {
             return;
         }
-        ejecutar("Cancelando", u -> app.contrataciones().cancelar(u, c.getId(), motivo),
-                "Contratación cancelada. Si estaba pagada, el reintegro depende de la anticipación.");
+        String u = usuario;
+        boolean estabaPagada = c.getEstado() == EstadoContratacionDTO.CONFIRMADA;
+        trabajo("Cancelando", () -> app.contrataciones().cancelar(u, c.getId(), motivo), reintegrado -> {
+            if (reintegrado > 0) {
+                ok("Contratación cancelada. Se reintegraron " + reintegrado + " SkillCoins al cliente.");
+            } else if (estabaPagada) {
+                ok("Contratación cancelada. Por la poca anticipación no corresponde reintegro.");
+            } else {
+                ok("Contratación cancelada. No estaba pagada, así que no hay nada que reintegrar.");
+            }
+            refrescar();
+            actualizarExplorar();
+        });
     }
 
     private void proponerReprogramacion(ContratacionDTO c) {
@@ -503,6 +514,9 @@ public final class SkillSwapFrame extends JFrame {
                 (ComprobantePagoDTO comprobante) -> {
                     String texto = "Publicación: " + c.getTitulo()
                             + "\nTotal pagado: " + comprobante.getTotal() + " SkillCoins"
+                            + (comprobante.getReintegrado() > 0
+                                    ? "\nReintegrado al cancelar: " + comprobante.getReintegrado() + " SkillCoins"
+                                    : "")
                             + "\nFecha: " + FECHA.format(comprobante.getFecha())
                             + "\nComprobante N.º " + comprobante.getPagoId();
                     JOptionPane.showMessageDialog(this, texto, "Comprobante de pago",
@@ -626,8 +640,9 @@ public final class SkillSwapFrame extends JFrame {
 
     private void demoGuiada() {
         int respuesta = JOptionPane.showConfirmDialog(this,
-                "La demo recorre el flujo completo con bruno, ana y diego y modifica los datos\n"
-                        + "(cada corrida ocupa un lugar de la franja). ¿Continuar?",
+                "La demo recorre los 10 casos de aceptación con ana, bruno, diego y carla.\n"
+                        + "Modifica los datos: crea publicaciones y contrataciones nuevas, y mueve SkillCoins.\n"
+                        + "Cada corrida usa su propia publicación, así que se puede repetir. ¿Continuar?",
                 "Demo guiada", JOptionPane.OK_CANCEL_OPTION);
         if (respuesta != JOptionPane.OK_OPTION) {
             return;
@@ -642,7 +657,7 @@ public final class SkillSwapFrame extends JFrame {
             area.setText(texto);
             area.setCaretPosition(0);
             JScrollPane scroll = new JScrollPane(area);
-            scroll.setPreferredSize(new Dimension(780, 480));
+            scroll.setPreferredSize(new Dimension(900, 560));
             JOptionPane.showMessageDialog(this, scroll, "Demo guiada", JOptionPane.PLAIN_MESSAGE);
             ok("Demo guiada terminada.");
             refrescar();

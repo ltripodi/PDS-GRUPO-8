@@ -49,7 +49,7 @@ class DesafioIntegracionTest {
     private final UnidadTransaccional unidad = new JpaUnidadTransaccional();
     private final PublicadorEventosEnMemoria publicador = new PublicadorEventosEnMemoria();
     private final PagoService pagos = new PagoService(contrataciones, billeteras, perfiles, organizaciones, unidad,
-            null, publicador, new JpaPagoRepository());
+            publicador, new JpaPagoRepository());
     private final ContratacionService servicio = new ContratacionService(contrataciones,
             new JpaPublicacionRepository(), perfiles, organizaciones, unidad, publicador, pagos,
             new PoliticaSinReintegro(), new JpaPromocionRepository());

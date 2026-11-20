@@ -92,7 +92,8 @@ public final class ConsolaSkillSwap {
             case "7" -> app.contrataciones().pagar(usuario, elegirContratacion());
             case "8" -> app.contrataciones().iniciar(usuario, elegirContratacion());
             case "9" -> app.contrataciones().completar(usuario, elegirContratacion());
-            case "10" -> app.contrataciones().cancelar(usuario, elegirContratacion(), leer("Motivo"));
+            case "10" -> System.out.println("  Reintegrado al cliente: "
+                    + app.contrataciones().cancelar(usuario, elegirContratacion(), leer("Motivo")) + " SkillCoins");
             case "11" -> proponerReprogramacion();
             case "12" -> app.contrataciones().aceptarReprogramacion(usuario, elegirContratacion());
             case "13" -> app.contrataciones().rechazarReprogramacion(usuario, elegirContratacion());
@@ -243,7 +244,8 @@ public final class ConsolaSkillSwap {
     private void mostrarComprobante(UUID contratacionId) {
         ComprobantePagoDTO comprobante = app.contrataciones().consultarComprobante(usuario, contratacionId);
         System.out.println("  Pago " + comprobante.getPagoId() + ": " + comprobante.getTotal()
-                + " SkillCoins el " + FORMATO.format(comprobante.getFecha()));
+                + " SkillCoins el " + FORMATO.format(comprobante.getFecha())
+                + (comprobante.getReintegrado() > 0 ? " (reintegrado: " + comprobante.getReintegrado() + ")" : ""));
     }
 
     private void calificar() {
