@@ -173,7 +173,7 @@ public class Contratacion {
         }
     }
 
-    /* Reprogramacion 1/2: quien propone ya acepta; falta la otra parte. */
+    /* Reprogramacion: quien propone ya acepta*/
     public void proponerReprogramacion(UUID actorId, FranjaHoraria nuevaFranja) {
         validarParticipante(actorId, "proponer una reprogramacion de");
         estadoActual.proponerReprogramacion(this);
@@ -197,7 +197,7 @@ public class Contratacion {
         propuestas.add(propuesta);
     }
 
-    /* Reprogramacion 2/2: la otra parte acepta y la reserva se mueve de franja. */
+    /* Reprogramacion : la otra parte acepta y la reserva se mueve de franja. */
     public void aplicarReprogramacion(UUID actorId) {
         validarParticipante(actorId, "reprogramar");
         estadoActual.aplicarReprogramacion(this);

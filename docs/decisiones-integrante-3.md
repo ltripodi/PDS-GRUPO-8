@@ -37,3 +37,10 @@
 3. `PropuestaReprogramacion`: atributo `rechazada` y operaciones `rechazar()` / `estaPendiente()`.
 4. `ContratacionService` y `ContratacionController`: `rechazarReprogramacion(...)` y `consultarHistorial(...) : List<RegistroHistorialDTO>`; agregar `RegistroHistorialDTO` en Application.
 5. Diagrama de estados 4.5: la reprogramación (proponer / aceptar / rechazar) es una autotransición en `ACEPTADA` y `CONFIRMADA`.
+
+### Patrones que tocan contratación (el diagrama hoy solo muestra State)
+
+6. **Strategy (cancelación):** `«interface» PoliticaCancelacion` con `calcularReintegro(total: SkillCoins, anticipacion: Duration): SkillCoins`, realizada por `PoliticaPorAnticipacion` (`limiteTotal`, `limiteParcial: Duration`) y `PoliticaSinReintegro`. El **Context es `ContratacionService`** (atributo `politicaCancelacion`, asociación hacia la interfaz), **no** `Contratacion`. Nota: "el State decide si se puede cancelar; la Strategy decide cuánto se reintegra, y solo si estaba pagada".
+7. **Decorator (precio):** `ContratacionService` depende de `«interface» CalculadorPrecio` (`total()`), con `PrecioBase` y `PrecioConPromocion` (atributo `componente: CalculadorPrecio` → agregación hacia la interfaz + `Promocion`). Se usa al solicitar para fijar el precio con las promociones vigentes.
+8. **Observer (eventos):** `ContratacionService` → `«interface» PublicadorEventosPort` (dependencia), que publica `EventoDominio` (con `TipoEvento`: `SOLICITUD_RECIBIDA`, `ACEPTACION`, `PAGO_CONFIRMADO`, `REPROGRAMACION`, `CANCELACION`, `SESION_COMPLETADA`, …) después del commit; `NotificacionesObserver` realiza `«interface» ObservadorEvento`.
+9. Rotular cada grupo con un estereotipo o nota (`«State»`, `«Strategy»`, `«Decorator»`, `«Observer»`) para que en la defensa se vea en qué parte del diagrama está cada patrón.
