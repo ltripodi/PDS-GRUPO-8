@@ -70,13 +70,14 @@ public class ContratacionController extends ControllerBase {
         });
     }
 
-    public void cancelar(String userId, UUID contratacionId, String motivo) {
-        ejecutarAccion(() -> {
+    /* Devuelve los SkillCoins reintegrados al cliente (0 si no estaba pagada o la politica no devuelve nada). */
+    public int cancelar(String userId, UUID contratacionId, String motivo) {
+        return ejecutar(() -> {
             validar(userId, contratacionId);
             if (motivo == null || motivo.isBlank()) {
                 throw new IllegalArgumentException("La cancelacion requiere un motivo");
             }
-            contratacionService.cancelar(userId, contratacionId, motivo);
+            return contratacionService.cancelar(userId, contratacionId, motivo);
         });
     }
 

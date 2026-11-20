@@ -6,12 +6,14 @@ import com.skillswap.application.contratacion.ContratacionRepository;
 import com.skillswap.application.contratacion.SolicitudRepository;
 import com.skillswap.application.notificacion.NotificacionRepository;
 import com.skillswap.application.perfil.PerfilRepository;
+import com.skillswap.application.precio.PromocionRepository;
 import com.skillswap.application.publicacion.OrganizacionRepository;
 import com.skillswap.application.publicacion.PublicacionRepository;
 import com.skillswap.domain.contratacion.Contratacion;
 import com.skillswap.domain.contratacion.Solicitud;
 import com.skillswap.domain.notificacion.Notificacion;
 import com.skillswap.domain.perfil.Perfil;
+import com.skillswap.domain.precio.Promocion;
 import com.skillswap.domain.publicacion.Categoria;
 import com.skillswap.domain.publicacion.EstadoPublicacion;
 import com.skillswap.domain.publicacion.Organizacion;
@@ -24,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -47,6 +50,15 @@ public final class DoblesEnMemoria {
         @Override
         public Optional<Perfil> buscarPorId(UUID id) {
             return porUserId.values().stream().filter(perfil -> perfil.getId().equals(id)).findFirst();
+        }
+
+        @Override
+        public Map<UUID, Perfil> buscarPorIds(Set<UUID> ids) {
+            Map<UUID, Perfil> encontrados = new HashMap<>();
+            if (ids != null) {
+                ids.forEach(id -> buscarPorId(id).ifPresent(perfil -> encontrados.put(id, perfil)));
+            }
+            return encontrados;
         }
 
         @Override
@@ -109,6 +121,21 @@ public final class DoblesEnMemoria {
         }
     }
 
+    /* Sin filas, el precio de una contratacion es el precio base; guardar() agrega una promocion vigente. */
+    public static final class Promociones implements PromocionRepository {
+        private final List<Promocion> vigentes = new ArrayList<>();
+
+        @Override
+        public List<Promocion> listarVigentes() {
+            return List.copyOf(vigentes);
+        }
+
+        @Override
+        public void guardar(Promocion promocion) {
+            vigentes.add(promocion);
+        }
+    }
+
     public static final class Contrataciones implements ContratacionRepository {
         private final Map<UUID, Contratacion> porId = new LinkedHashMap<>();
         private final Perfiles perfiles;
@@ -126,6 +153,11 @@ public final class DoblesEnMemoria {
         public List<Contratacion> listarPorParticipante(String userId) {
             UUID perfilId = perfiles.buscarPorUserId(userId).map(Perfil::getId).orElse(null);
             return porId.values().stream().filter(c -> c.esParticipante(perfilId)).toList();
+        }
+
+        @Override
+        public Pagina<Contratacion> listarPorParticipantePaginado(String userId, int pagina, int tamanio) {
+            return Pagina.de(listarPorParticipante(userId), pagina, tamanio);
         }
 
         @Override

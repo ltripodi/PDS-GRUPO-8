@@ -14,6 +14,7 @@ import com.skillswap.domain.contratacion.PoliticaCancelacion;
 import com.skillswap.domain.contratacion.PoliticaPorAnticipacion;
 import com.skillswap.domain.contratacion.PoliticaSinReintegro;
 import com.skillswap.domain.pagos.Billetera;
+import com.skillswap.domain.pagos.Movimiento;
 import com.skillswap.domain.perfil.Perfil;
 import com.skillswap.domain.precio.Promocion;
 import com.skillswap.domain.publicacion.Categoria;
@@ -62,7 +63,7 @@ class PagosIntegracionTest {
     private final PublicadorEventosEnMemoria publicador = new PublicadorEventosEnMemoria();
 
     private final PagoService pagoService = new PagoService(contratacionesRepo, billeteras, perfiles,
-            new JpaOrganizacionRepository(), unidad, null, publicador, new JpaPagoRepository());
+            new JpaOrganizacionRepository(), unidad, publicador, new JpaPagoRepository());
 
     private final ContratacionService conPoliticaTotal = servicio(
             new PoliticaPorAnticipacion(Duration.ofHours(48), Duration.ofHours(24)));
@@ -227,6 +228,26 @@ class PagosIntegracionTest {
         assertEquals(50, saldo(cliente));
         assertEquals(50, saldo(proveedor));
         assertEquals("CANCELADA", estado(contratacion));
+    }
+
+    /* Si cancela el proveedor, el cliente recupera todo aunque la politica del cliente no devuelva nada. */
+    @Test
+    void siCancelaElProveedorDevuelveTodoYQuedaRegistradoComoDevolucion() {
+        Perfil cliente = nuevoPerfil();
+        Perfil proveedor = nuevoPerfil();
+        fondear(cliente, 100);
+        ContratacionDTO contratacion = aceptada(cliente, proveedor, 50);
+        controller.pagar(cliente.getUserId(), contratacion.getId());
+
+        int reintegrado = new ContratacionController(sinReintegro, pagoService)
+                .cancelar(proveedor.getUserId(), contratacion.getId(), "Me enferme");
+
+        assertEquals(50, reintegrado);
+        assertEquals(100, saldo(cliente));
+        assertEquals(0, saldo(proveedor));
+        assertEquals(50, pagoService.consultarComprobante(cliente.getUserId(), contratacion.getId()).getReintegrado());
+        assertEquals(List.of("CREDITO", "DEVOLUCION"), billeteras.listarMovimientos(proveedor.getUserId()).stream()
+                .map(Movimiento::getTipo).sorted().toList(), "el proveedor ve una devolucion, no un gasto");
     }
 
     /* Si el proveedor ya gasto lo cobrado, el reintegro falla y la cancelacion hace rollback completo. */

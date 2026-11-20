@@ -23,12 +23,13 @@ infrastructure → application → domain
 com.skillswap
 ├── SkillSwapApplication                main + composition root
 ├── domain
-│   ├── busqueda       EstrategiaRecomendacion, RecomendacionPorHabilidades, RecomendacionPorPopularidad,
-│   │                  OrdenPublicacion, TipoRecomendacion                                   [Strategy]
+│   ├── busqueda       EstrategiaRecomendacion, EstrategiaPorPuntaje, RecomendacionPorHabilidades,
+│   │                  RecomendacionPorPopularidad, OrdenPublicacion, TipoRecomendacion       [Strategy]
 │   ├── calificacion   Calificacion
 │   ├── compartido     SkillCoins, RegistroTransicion
 │   ├── contratacion   Contratacion, Estado* (9 clases), Solicitud, Reserva, PropuestaReprogramacion  [State]
-│   │                  PoliticaCancelacion, PoliticaPorAnticipacion, PoliticaSinReintegro      [Strategy]
+│   │                  PoliticaCancelacion, PoliticaPorAnticipacion, PoliticaReintegroTotal,
+│   │                  PoliticaSinReintegro                                                   [Strategy]
 │   ├── evento         EventoDominio, ObservadorEvento, TipoEvento                            [Observer]
 │   ├── notificacion   Notificacion, CanalNotificacion, PreferenciaNotificacion
 │   ├── pagos          Billetera, Movimiento, Pago

@@ -12,7 +12,6 @@ import com.skillswap.domain.evento.TipoEvento;
 import com.skillswap.domain.pagos.Billetera;
 import com.skillswap.domain.pagos.Pago;
 import com.skillswap.domain.perfil.Perfil;
-import com.skillswap.domain.precio.CalculadorPrecio;
 import com.skillswap.domain.publicacion.Organizacion;
 
 import java.util.HashSet;
@@ -27,9 +26,6 @@ public class PagoService {
     private final PerfilRepository perfiles;
     private final OrganizacionRepository organizaciones;
     private final UnidadTransaccional transacciones;
-    // Reservado (UML); no se usa en pagar(): el precio con promociones se fija al solicitar
-    // (ContratacionService.calcularPrecio) y pagar() cobra Contratacion.getPrecio().
-    private final CalculadorPrecio precio;
     private final PublicadorEventosPort eventos;
     private final PagoRepository pagos;
 
@@ -38,7 +34,6 @@ public class PagoService {
                        PerfilRepository perfiles,
                        OrganizacionRepository organizaciones,
                        UnidadTransaccional transacciones,
-                       CalculadorPrecio precio,
                        PublicadorEventosPort eventos,
                        PagoRepository pagos) {
         this.contrataciones = contrataciones;
@@ -46,12 +41,14 @@ public class PagoService {
         this.perfiles = perfiles;
         this.organizaciones = organizaciones;
         this.transacciones = transacciones;
-        this.precio = precio;
         this.eventos = eventos;
         this.pagos = pagos;
     }
 
-    /** UNA transacción: débito + crédito + guardar Pago + confirmar Contratación. */
+    /*
+     * UNA transacción: débito + crédito + guardar Pago + confirmar Contratación.
+     * Cobra Contratacion.getPrecio(): el precio con promociones (Decorator) quedó fijado al solicitar.
+     */
     public void pagar(String userId, UUID contratacionId) {
         if (userId == null || userId.isBlank()) {
             throw new IllegalArgumentException("El userId es obligatorio");
@@ -132,7 +129,7 @@ public class PagoService {
                 .orElseThrow(() -> new IllegalArgumentException("No existe pago para la contratación"));
 
         return new ComprobantePagoDTO(pago.getId(), pago.getContratacionId(),
-                pago.getTotal().getValor(), pago.getFecha());
+                pago.getTotal().getValor(), pago.getTotalReintegrado().getValor(), pago.getFecha());
     }
 
     /** Se invoca DENTRO de la transacción de ContratacionService.cancelar → NO abre transacción propia. */
@@ -157,7 +154,7 @@ public class PagoService {
         // "Saldo insuficiente" y toda la cancelacion hace rollback (no se pierde ni se inventa dinero).
         String proveedorUserId = resolverUserIdDelProveedor(contratacion.getProveedorId());
         Billetera billeteraProveedor = obtenerOCrearBilletera(proveedorUserId);
-        billeteraProveedor.debitar(monto);
+        billeteraProveedor.devolver(monto);
         billeteras.guardar(billeteraProveedor);
 
         Billetera billetera = obtenerOCrearBilletera(clienteUserId);

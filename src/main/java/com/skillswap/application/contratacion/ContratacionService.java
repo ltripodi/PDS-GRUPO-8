@@ -11,6 +11,7 @@ import com.skillswap.application.publicacion.PublicacionRepository;
 import com.skillswap.domain.compartido.SkillCoins;
 import com.skillswap.domain.contratacion.Contratacion;
 import com.skillswap.domain.contratacion.PoliticaCancelacion;
+import com.skillswap.domain.contratacion.PoliticaReintegroTotal;
 import com.skillswap.domain.contratacion.Solicitud;
 import com.skillswap.domain.evento.EventoDominio;
 import com.skillswap.domain.evento.TipoEvento;
@@ -28,7 +29,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -46,35 +46,19 @@ public class ContratacionService {
     private final UnidadTransaccional transacciones;
     private final PublicadorEventosPort eventos;
     private final PagoService pagos;
+    /* Strategy: decide el reintegro cuando cancela el cliente (en la app, segun la anticipacion). */
     private final PoliticaCancelacion politicaCancelacion;
+    /* Si cancela el proveedor, el cliente recupera todo lo pagado: no eligio cancelar. */
+    private final PoliticaCancelacion politicaSiCancelaElProveedor = new PoliticaReintegroTotal();
     private final PromocionRepository promociones;
-
-    /* Sin promociones: el precio de la contratacion es el precio base de la publicacion. */
-    public ContratacionService(ContratacionRepository contrataciones, PublicacionRepository publicaciones,
-                               PerfilRepository perfiles, OrganizacionRepository organizaciones,
-                               UnidadTransaccional transacciones, PublicadorEventosPort eventos,
-                               PagoService pagos, PoliticaCancelacion politicaCancelacion) {
-        this(contrataciones, publicaciones, perfiles, organizaciones, transacciones, eventos, pagos,
-                politicaCancelacion, new PromocionRepository() {
-                    @Override
-                    public List<Promocion> listarVigentes() {
-                        return List.of();
-                    }
-
-                    @Override
-                    public void guardar(Promocion promocion) {
-                        throw new UnsupportedOperationException("Este servicio no administra promociones");
-                    }
-                });
-    }
 
     public ContratacionService(ContratacionRepository contrataciones, PublicacionRepository publicaciones,
                                PerfilRepository perfiles, OrganizacionRepository organizaciones,
                                UnidadTransaccional transacciones, PublicadorEventosPort eventos,
                                PagoService pagos, PoliticaCancelacion politicaCancelacion,
                                PromocionRepository promociones) {
-        if (promociones == null) {
-            throw new IllegalArgumentException("El repositorio de promociones es obligatorio");
+        if (politicaCancelacion == null || promociones == null) {
+            throw new IllegalArgumentException("La politica de cancelacion y las promociones son obligatorias");
         }
         this.promociones = promociones;
         this.contrataciones = contrataciones;
@@ -162,27 +146,37 @@ public class ContratacionService {
     }
 
     /*
-     * Estado + cupo + reintegro en una transaccion.
-     * Strategy: el monto lo decide PoliticaCancelacion; solo si estaba pagada.
+     * Estado + cupo + reintegro en una transaccion. Devuelve los SkillCoins reintegrados al cliente.
+     * Strategy: si cancela el cliente, el monto lo decide la politica configurada (por anticipacion);
+     * si cancela el proveedor, se devuelve todo. Solo hay reintegro si la contratacion estaba pagada.
      */
-    public void cancelar(String userId, UUID contratacionId, String motivo) {
+    public int cancelar(String userId, UUID contratacionId, String motivo) {
+        AtomicReference<Integer> reintegrado = new AtomicReference<>(0);
+
         transacciones.ejecutar(() -> {
             Contratacion contratacion = obtenerContratacion(contratacionId);
             boolean estabaPagada = "CONFIRMADA".equals(contratacion.getEstado());
             Duration anticipacion = anticipacionHastaInicio(contratacion);
+            UUID actorId = resolverActor(userId, contratacion);
 
-            contratacion.cancelar(resolverActor(userId, contratacion), motivo);
+            contratacion.cancelar(actorId, motivo);
             contrataciones.guardar(contratacion);
 
             if (estabaPagada) {
-                SkillCoins reintegro = politicaCancelacion.calcularReintegro(contratacion.getPrecio(), anticipacion);
+                PoliticaCancelacion politica = actorId.equals(contratacion.getProveedorId())
+                        ? politicaSiCancelaElProveedor
+                        : politicaCancelacion;
+                SkillCoins reintegro = politica.calcularReintegro(contratacion.getPrecio(), anticipacion);
                 if (reintegro.getValor() > 0) {
                     pagos.realizarReintegro(contratacion.getId(), reintegro);
                 }
+                reintegrado.set(reintegro.getValor());
             }
 
             publicar(TipoEvento.CANCELACION, contratacion, userId);
         });
+
+        return reintegrado.get();
     }
 
     public void proponerReprogramacion(String userId, UUID contratacionId, UUID nuevaFranjaId) {

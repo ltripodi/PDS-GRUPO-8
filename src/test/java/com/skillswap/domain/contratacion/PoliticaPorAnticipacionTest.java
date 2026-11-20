@@ -25,6 +25,14 @@ class PoliticaPorAnticipacionTest {
         assertEquals(50, politica.calcularReintegro(total, Duration.ofHours(24)).getValor());
     }
 
+    /* La otra estrategia: la que se aplica cuando cancela el proveedor. */
+    @Test
+    void reintegroTotal_devuelveTodoSinImportarLaAnticipacion() {
+        PoliticaCancelacion total = new PoliticaReintegroTotal();
+        assertEquals(100, total.calcularReintegro(this.total, Duration.ZERO).getValor());
+        assertEquals(100, total.calcularReintegro(this.total, Duration.ofDays(30)).getValor());
+    }
+
     @Test
     void con2h_noReintegra() {
         assertEquals(0, politica.calcularReintegro(total, Duration.ofHours(2)).getValor());

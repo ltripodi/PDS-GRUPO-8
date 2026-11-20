@@ -72,7 +72,10 @@ import java.util.Scanner;
  */
 public final class SkillSwapApplication implements AutoCloseable {
 
-    /* Politica de cancelacion de la demo: reintegro total con 48 h de anticipacion, 50 % con 24 h, nada despues. */
+    /*
+     * Politica de cancelacion cuando cancela el cliente: reintegro total con 48 h de anticipacion,
+     * 50 % con 24 h, nada despues. Si cancela el proveedor, el cliente recupera siempre el 100 %.
+     */
     private static final Duration ANTICIPACION_REINTEGRO_TOTAL = Duration.ofHours(48);
     private static final Duration ANTICIPACION_REINTEGRO_PARCIAL = Duration.ofHours(24);
     /* Ventana de la recomendacion por popularidad: solicitudes de los ultimos 30 dias. */
@@ -155,8 +158,9 @@ public final class SkillSwapApplication implements AutoCloseable {
 
         // Servicios (casos de uso)
         PagoService pagoService = new PagoService(contratacionRepo, billeteraRepo, perfilRepo, organizacionRepo,
-                unidad, null, publicador, new JpaPagoRepository());
-        // Strategy: la politica de cancelacion decide el reintegro.
+                unidad, publicador, new JpaPagoRepository());
+        // Strategy: la politica por anticipacion decide el reintegro cuando cancela el cliente;
+        // si cancela el proveedor, ContratacionService devuelve todo (PoliticaReintegroTotal).
         ContratacionService contratacionService = new ContratacionService(contratacionRepo, publicacionRepo,
                 perfilRepo, organizacionRepo, unidad, publicador, pagoService,
                 new PoliticaPorAnticipacion(ANTICIPACION_REINTEGRO_TOTAL, ANTICIPACION_REINTEGRO_PARCIAL),

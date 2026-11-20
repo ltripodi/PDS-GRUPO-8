@@ -59,11 +59,15 @@
 - [ ] Casi todo el mapeo es `EAGER`, y `buscarCandidatas` trae todas las publicaciones.
 - [x] Un desafío se puede calificar por ambas partes: la organización participa mediante su representante; sólo los perfiles recalculan reputación.
 - [x] Los getters de colecciones de dominio devuelven copias inmutables; ya no se pueden modificar agregados desde afuera de sus operaciones.
-- [ ] Menores: `SkillCoins` sin `equals`/`hashCode`; `Movimiento.tipo` es `String`; `PagoService` recibe un `CalculadorPrecio` que no usa.
+- [ ] Menores: `SkillCoins` sin `equals`/`hashCode`; `Movimiento.tipo` es `String`.
+- [x] `PagoService` ya no recibe el `CalculadorPrecio` que no usaba: el precio con promociones se fija al solicitar.
+- [x] Las interfaces son solo contratos: los métodos `default`/`static` de los repositorios pasaron a cada implementación, y lo común de las estrategias de recomendación pasó a `EstrategiaPorPuntaje`.
+- [x] La demo guiada recorre los 10 casos de aceptación y se puede repetir sin borrar la base.
 
 ### Decisiones para el grupo
 
 - **Publicación cancelada con contrataciones ya pagadas:** hoy siguen su curso (se pueden iniciar, completar o cancelar con reintegro). Solo se bloquea aceptar y pagar.
 - **Cancelar con un proveedor que ya gastó lo cobrado:** falla, para no crear SkillCoins.
-- **Alcance de las promociones:** hoy son globales.
+- **Alcance de las promociones:** hoy son globales. V9 carga dos (-10 y -5) para que se vean en la app.
+- **Cancelación por el proveedor (decidido):** si cancela el proveedor una contratación pagada, el cliente recupera el 100 % (`PoliticaReintegroTotal`). La política por anticipación se aplica solo cuando cancela el cliente. `cancelar` devuelve lo reintegrado, y el proveedor ve el movimiento como `DEVOLUCION`.
 - **Patrones:** hay 5 implementados (Strategy, State, Observer, Adapter, Decorator). Se puede presentar `EstadoContratacionBase.desdeNombre` como Simple Factory.

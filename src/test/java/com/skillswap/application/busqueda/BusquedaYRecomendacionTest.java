@@ -367,6 +367,11 @@ class BusquedaYRecomendacionTest {
         }
 
         @Override
+        public boolean requiereSolicitudesRecientes() {
+            return false;
+        }
+
+        @Override
         public List<Publicacion> recomendar(Perfil perfil, List<Publicacion> candidatas,
                                             Map<UUID, Integer> solicitudesRecientes) {
             return candidatas.stream()
@@ -393,7 +398,9 @@ class BusquedaYRecomendacionTest {
         @Override
         public Map<UUID, Perfil> buscarPorIds(Set<UUID> ids) {
             busquedasEnLote++;
-            return PerfilRepository.super.buscarPorIds(ids);
+            Map<UUID, Perfil> encontrados = new HashMap<>();
+            ids.forEach(id -> buscarPorId(id).ifPresent(perfil -> encontrados.put(id, perfil)));
+            return encontrados;
         }
 
         @Override

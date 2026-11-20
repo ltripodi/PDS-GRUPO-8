@@ -72,7 +72,8 @@ class NotificacionesIntegracionTest {
     /* El caso de uso de 4.4 sin modificar: solo se le inyecta el publicador real. Pagos no interviene. */
     private final ContratacionService contrataciones = new ContratacionService(new JpaContratacionRepository(),
             new JpaPublicacionRepository(), perfiles, new JpaOrganizacionRepository(), unidad, publicador,
-            new PagoService(null, null, null, null, null, null, null, null), new PoliticaSinReintegro());
+            new PagoService(null, null, null, null, null, null, null), new PoliticaSinReintegro(),
+            new JpaPromocionRepository());
 
     NotificacionesIntegracionTest() {
         publicador.suscribir(new NotificacionesObserver(notificacionService));

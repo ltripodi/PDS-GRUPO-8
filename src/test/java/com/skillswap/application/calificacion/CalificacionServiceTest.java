@@ -1,6 +1,7 @@
 package com.skillswap.application.calificacion;
 
 import com.skillswap.application.DoblesEnMemoria;
+import com.skillswap.application.compartido.Pagina;
 import com.skillswap.application.contratacion.ContratacionRepository;
 import com.skillswap.application.publicacion.OrganizacionRepository;
 import com.skillswap.domain.calificacion.Calificacion;
@@ -128,6 +129,11 @@ class CalificacionServiceTest {
         @Override
         public List<Contratacion> listarPorParticipante(String userId) {
             return List.of();
+        }
+
+        @Override
+        public Pagina<Contratacion> listarPorParticipantePaginado(String userId, int pagina, int tamanio) {
+            return Pagina.de(listarPorParticipante(userId), pagina, tamanio);
         }
 
         @Override

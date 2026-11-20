@@ -3,6 +3,7 @@ package com.skillswap.infrastructure.persistence;
 import com.skillswap.domain.evento.TipoEvento;
 import com.skillswap.domain.notificacion.CanalNotificacion;
 import com.skillswap.domain.perfil.Perfil;
+import com.skillswap.domain.precio.Promocion;
 import com.skillswap.domain.publicacion.EstadoPublicacion;
 import com.skillswap.domain.publicacion.Publicacion;
 import com.skillswap.domain.publicacion.TipoPublicacion;
@@ -50,9 +51,9 @@ class MigracionesTest {
         String url = baseNueva();
 
         MigrateResult resultado = MigracionesBaseDeDatos.migrar(url, "sa", "");
-        assertEquals(8, resultado.migrationsExecuted, "V1 esquema, V2 datos demo, V3 limpieza, "
-                + "V4 version de billeteras, V5 integridad y concurrencia, V6 usuario, V7 nombre de la organizacion "
-                + "y V8 tipos de notificacion");
+        assertEquals(9, resultado.migrationsExecuted, "V1 esquema, V2 datos demo, V3 limpieza, "
+                + "V4 version de billeteras, V5 integridad y concurrencia, V6 usuario, V7 nombre de la organizacion, "
+                + "V8 tipos de notificacion y V9 promociones");
         assertFalse(existeTabla(url, "registro_estado_publicacion"), "V3 la elimina");
 
         EntityManagerFactory emf = validarMapeoContra(url);
@@ -80,6 +81,11 @@ class MigracionesTest {
             assertEquals("UADE", desafio.getOrganizacion().getNombre());
             assertEquals("uade-admin", desafio.getOrganizacion().getUserIdAutorizado());
             assertEquals("uade-admin", desafio.getHistorial().get(0).getActorId());
+
+            // V9: dos promociones acumulables (10 + 5) sobre el precio base
+            List<Promocion> promociones = em.createQuery("select p from Promocion p", Promocion.class)
+                    .getResultList();
+            assertEquals(15, promociones.stream().mapToInt(p -> p.getDescuento().getValor()).sum());
         } finally {
             em.close();
             emf.close();

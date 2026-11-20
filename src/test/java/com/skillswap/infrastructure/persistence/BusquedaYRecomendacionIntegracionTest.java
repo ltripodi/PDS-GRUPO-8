@@ -37,7 +37,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -179,29 +178,10 @@ class BusquedaYRecomendacionIntegracionTest {
         assertTrue(encontrados.get(sinHabilidades.getId()).getHabilidades().isEmpty());
     }
 
-    /* El contrato es el mismo en JPA y en la version por defecto del puerto (la de los dobles de prueba). */
     @Test
-    void buscarPorIdsSinIdsDevuelveUnMapaVacioEnLasDosImplementaciones() {
-        PerfilRepository porDefecto = new PerfilRepository() {
-            @Override
-            public Optional<Perfil> buscarPorUserId(String userId) {
-                return Optional.empty();
-            }
-
-            @Override
-            public Optional<Perfil> buscarPorId(UUID id) {
-                return Optional.empty();
-            }
-
-            @Override
-            public void guardar(Perfil perfil) {
-            }
-        };
-
-        for (PerfilRepository repositorio : List.of(perfiles, porDefecto)) {
-            assertTrue(repositorio.buscarPorIds(null).isEmpty());
-            assertTrue(repositorio.buscarPorIds(Set.of()).isEmpty());
-        }
+    void buscarPorIdsSinIdsDevuelveUnMapaVacio() {
+        assertTrue(perfiles.buscarPorIds(null).isEmpty());
+        assertTrue(perfiles.buscarPorIds(Set.of()).isEmpty());
     }
 
     // ---------- helpers ----------
